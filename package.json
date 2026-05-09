@@ -2,14 +2,14 @@
     "name": "koishi-plugin-osu-mania-greek-alphabet",
     "description": "根据 osu!mania 段位生成带希腊字母图片的 Koishi 插件。",
     "version": "1.0.0",
-    "main": "lib/index.cjs",
-    "module": "lib/index.mjs",
+    "main": "lib/index.js",
     "typings": "lib/index.d.ts",
+    "types": "lib/index.d.ts",
     "exports": {
         ".": {
-            "import": "./lib/index.mjs",
-            "require": "./lib/index.cjs",
-            "types": "./lib/index.d.ts"
+            "types": "./lib/index.d.ts",
+            "import": "./lib/index.js",
+            "require": "./lib/index.js"
         },
         "./package.json": "./package.json"
     },
@@ -35,15 +35,32 @@
         "jimp": "^1.6.0"
     },
     "devDependencies": {
-        "esbuild": "^0.20.2",
-        "esbuild-register": "^3.6.0",
+        "@typescript-eslint/eslint-plugin": "^7.18.1-alpha.3",
+        "@typescript-eslint/parser": "^8.45.1-alpha.0",
+        "esbuild": "^0.25.10",
+        "esbuild-register": "npm:@shigma/esbuild-register@^1.1.1",
         "eslint": "^8.57.1",
         "eslint-config-prettier": "^9.1.2",
         "eslint-config-standard": "^17.1.0",
         "eslint-plugin-import": "^2.32.0",
         "eslint-plugin-n": "^16.6.2",
         "eslint-plugin-prettier": "^5.5.4",
-        "eslint-plugin-promise": "^7.2.1"
+        "eslint-plugin-promise": "^7.2.1",
+        "yakumo": "^1.0.0",
+        "yakumo-esbuild": "^1.0.0",
+        "yakumo-mocha": "^1.0.0",
+        "yakumo-tsc": "^1.0.0"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "scripts": {
+        "build": "yarn yakumo build",
+        "bump": "yarn yakumo version",
+        "dep": "yarn yakumo upgrade",
+        "pub": "yarn yakumo publish",
+        "lint": "yarn eslint src --ext=ts",
+        "lint-fix": "yarn eslint src --ext=ts --fix"
     },
     "koishi": {
         "description": {
