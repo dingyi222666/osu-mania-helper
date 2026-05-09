@@ -1,0 +1,30 @@
+# koishi-plugin-osu-mania-greek-alphabet
+
+[![npm](https://img.shields.io/npm/v/koishi-plugin-osu-mania-greek-alphabet?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-osu-mania-greek-alphabet)
+
+根据 osu!mania 段位生成带希腊字母图片的 Koishi 插件。
+
+## 注意
+
+当前版本只保留插件脚手架和命令入口，具体生成逻辑暂未实现。
+
+## 命令
+
+- `greek <symbol>`
+
+示例：
+
+- `greek gamma`
+- `greek γ -p top-right`
+- `greek zeta -p center -s 42`
+- `greek eta -b 70 -n 50 --scanline 60`
+
+执行命令后发送图片，插件会在输入图片原始尺寸上叠加对应希腊字母。
+
+## 目前支持的功能(没打勾就是没做)
+
+- [ ] 给定图片，根据 osu!mania 段位生成带希腊字母的图片
+
+## 致谢
+
+感谢 [Brofriendosu/Dan-Maker](https://github.com/Brofriendosu/Dan-Maker/tree/main/assets/greek) 提供的希腊字母相关资源。

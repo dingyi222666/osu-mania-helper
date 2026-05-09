@@ -1,0 +1,26 @@
+commands:
+    greek:
+        description: 根据 osu!mania 段位生成带希腊字母的图片。
+        usage: greek <symbol> [-p position] [-s size] [-g glitch] [-r rgb] [-w wave]
+        examples: |-
+            greek gamma
+            greek γ -p top-right
+            greek zeta -p center -s 42
+        options:
+            position: 字母位置，可选 center/top/bottom/left/right/top-left/top-right/bottom-left/bottom-right。
+            size: 字母高度占输入图高度的百分比。
+            glitch: 故障切片强度。
+            rgb: RGB 色差偏移强度。
+            wave: 波浪扭曲强度。
+            blocks: 块状错位强度。
+            noise: 噪声强度。
+            scanline: 扫描线强度。
+            vignette: 红黑暗角强度。
+            ghost: 残影强度。
+        messages:
+            invalid-symbol: 请输入有效的希腊字母，如 alpha/a/α、beta/b/β、gamma/g/γ、zeta/z/ζ。
+            invalid-position: 请输入有效的位置，如 center、top、bottom、left、right、top-left、top-right、bottom-left、bottom-right。
+            prompt-image: 请发送要处理的图片。
+            timeout: 等待图片超时，已取消。
+            no-image: 没有找到图片。
+            failed: 图片处理失败。
