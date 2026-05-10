@@ -1,7 +1,7 @@
 {
     "name": "koishi-plugin-osu-mania-greek-alphabet",
     "description": "根据 osu!mania 段位生成带希腊字母图片的 Koishi 插件。",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "main": "lib/index.cjs",
     "module": "lib/index.mjs",
     "typings": "lib/index.d.ts",

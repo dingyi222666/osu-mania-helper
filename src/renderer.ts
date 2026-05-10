@@ -144,12 +144,12 @@ const presets: Record<GreekSymbol, GreekPreset> = {
     gamma: createPreset(46, 2, 6, 1, 1, 0, 1, 0, 0),
     delta: createPreset(48, 5, 10, 1, 1, 0, 1, 0, 0),
     epsilon: createPreset(52, 10, 14, 3, 0, 0, 0, 0, 0),
-    zeta: createPreset(54, 18, 21, 7, 0, 0, 0, 0, 0),
-    thaumiel_zeta: createPreset(54, 18, 21, 7, 0, 0, 0, 0, 0),
-    eta: createPreset(58, 32, 28, 10, 16, 8, 14, 10, 3),
-    theta: createPreset(62, 32, 34, 14, 22, 10, 18, 12, 4),
-    iota: createPreset(62, 36, 38, 16, 26, 12, 20, 14, 5),
-    kappa: createPreset(60, 40, 42, 18, 30, 14, 22, 16, 6)
+    zeta: createPreset(54, 17, 13, 7, 0, 0, 0, 0, 0),
+    thaumiel_zeta: createPreset(54, 17, 13, 7, 0, 0, 0, 0, 0),
+    eta: createPreset(58, 29, 17, 10, 14, 8, 14, 10, 3),
+    theta: createPreset(62, 31, 21, 14, 18, 10, 18, 12, 4),
+    iota: createPreset(62, 33, 24, 16, 20, 12, 20, 14, 5),
+    kappa: createPreset(60, 35, 26, 18, 22, 14, 22, 16, 6)
 }
 
 export function parseGreekSymbol(input?: string): GreekSymbol | null {
@@ -396,7 +396,7 @@ function applyGlitch(
         return rnd / 233280
     }
     const scale = Math.max(0.55, Math.min(width / 1920, height / 1080))
-    const slices = Math.max(2, Math.floor(intensity / 14) + 3)
+    const slices = Math.max(2, Math.floor(intensity / 16) + 2)
     const maxOffset = Math.min(
         Math.round(width * 0.16),
         Math.round(intensity * 2.2 * scale)
@@ -448,10 +448,10 @@ function applyGlitch(
     }
 
     const randomSegment = () => {
-        if (random() < 0.24) return { x: 0, width }
+        if (random() < 0.22) return { x: 0, width }
 
-        const minWidth = Math.max(24, Math.round(width * 0.14))
-        const maxWidth = Math.max(minWidth, Math.round(width * 0.46))
+        const minWidth = Math.max(24, Math.round(width * 0.12))
+        const maxWidth = Math.max(minWidth, Math.round(width * 0.44))
         const segmentWidth = Math.min(
             width,
             minWidth + Math.round(random() * (maxWidth - minWidth))
@@ -477,23 +477,23 @@ function applyGlitch(
         moveSlice(y, sliceHeight, randomOffset(), segment.x, segment.width)
     }
 
-    if (intensity >= 18) {
+    if (intensity >= 22) {
         const y = Math.floor(random() * height)
-        const sliceHeight = Math.max(2, Math.round(maxSliceHeight * 0.32))
+        const sliceHeight = Math.max(2, Math.round(maxSliceHeight * 0.26))
         moveSlice(y, sliceHeight, randomOffset())
     }
 
     if (symbolRect && intensity >= 6) {
-        const focusCount = intensity >= 18 ? 3 : 2
+        const focusCount = intensity >= 24 ? 2 : 1
         for (let i = 0; i < focusCount; i++) {
-            const ratio = focusCount === 2 ? i : i / (focusCount - 1)
+            const ratio = focusCount === 1 ? 0.5 : i / (focusCount - 1)
             const jitter = Math.round((random() - 0.5) * symbolRect.height * 0.16)
             const y = Math.round(
                 symbolRect.y + symbolRect.height * (0.18 + ratio * 0.64) + jitter
             )
             const sliceHeight = Math.max(
                 2,
-                Math.round(Math.min(maxSliceHeight, symbolRect.height * 0.09))
+                Math.round(Math.min(maxSliceHeight, symbolRect.height * 0.06))
             )
             const segment = randomSegment()
             moveSlice(y, sliceHeight, randomOffset(), segment.x, segment.width)
@@ -504,9 +504,9 @@ function applyGlitch(
 function dimRow(data: Buffer, rowStart: number, width: number) {
     for (let x = 0; x < width; x++) {
         const index = rowStart + x * 4
-        data[index] = Math.round(data[index] * 0.45)
-        data[index + 1] = Math.round(data[index + 1] * 0.45)
-        data[index + 2] = Math.round(data[index + 2] * 0.45)
+        data[index] = Math.round(data[index] * 0.64)
+        data[index + 1] = Math.round(data[index + 1] * 0.64)
+        data[index + 2] = Math.round(data[index + 2] * 0.64)
     }
 }
 
