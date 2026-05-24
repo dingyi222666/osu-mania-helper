@@ -524,7 +524,7 @@ export async function renderCard(ctx: Context, data: CardRenderData): Promise<h 
     let page: Awaited<ReturnType<typeof ctx.puppeteer.page>> | undefined
     try {
         page = await ctx.puppeteer.page()
-        await page.setViewport({ width: 740, height: 800 })
+        await page.setViewport({ width: 740, height: 800, deviceScaleFactor: 2 })
         await page.setContent(html, { waitUntil: 'domcontentloaded' })
         await page.evaluate(() => document.fonts.ready)
         // Wait for images to load (with 5s timeout so it doesn't hang forever)
