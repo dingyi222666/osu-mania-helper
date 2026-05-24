@@ -1,7 +1,8 @@
+import * as path from 'path'
 import { Context, Logger } from 'koishi'
 import { AnalyserConfig } from './config'
 import { apply as commands } from './commands'
-import { AnalysisCache } from './core/cache'
+import { BeatmapCache } from './core/cache'
 
 export const name = 'osu-mania-analyser'
 export { AnalyserConfig as Config } from './config'
@@ -15,13 +16,15 @@ export function apply(ctx: Context, config: AnalyserConfig) {
     ctx.i18n.define('zh-CN', require('./locales/zh-CN'))
     logger = ctx.logger('osu-mania-analyser')
 
-    const cache = new AnalysisCache(config.cacheMaxAge)
+    const cacheDir = config.cacheDir
+        ? path.resolve(config.cacheDir)
+        : path.join(ctx.baseDir, 'data', 'osu-mania-analyser', 'cache')
+    const cache = new BeatmapCache(cacheDir, config.cacheMaxAge)
 
     // Periodic cache cleanup every hour
     const cleanupInterval = setInterval(() => cache.cleanup(), 60 * 60 * 1000)
     ctx.on('dispose', () => {
         clearInterval(cleanupInterval)
-        cache.clear()
     })
 
     ctx.plugin((childCtx) => commands(childCtx, config, cache))

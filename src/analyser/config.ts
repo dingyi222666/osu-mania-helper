@@ -8,6 +8,7 @@ export interface AnalyserConfig {
     cardBody: 'auto' | 'pattern' | 'etterna' | 'graph'
     mirrors: string[]
     cacheMaxAge: number
+    cacheDir: string
     maxFileSizeMb: number
 }
 
@@ -18,6 +19,7 @@ export const AnalyserConfig: Schema<AnalyserConfig> = Schema.object({
     enableSV: Schema.boolean().default(true).description('启用 SV 检测'),
     cardBody: Schema.union(['auto', 'pattern', 'etterna', 'graph']).default('auto').description('卡片主体内容'),
     mirrors: Schema.array(Schema.string()).default([]).description('自定义 .osu 文件下载镜像 URL（使用 {id} 作为谱面 ID 占位符，留空使用默认源）'),
-    cacheMaxAge: Schema.number().default(24).description('分析结果缓存最大存活时间（小时）'),
+    cacheMaxAge: Schema.number().default(24).description('.osu 谱面文件缓存最大存活时间（小时）'),
+    cacheDir: Schema.string().default('').description('缓存目录路径（留空使用默认路径 data/osu-mania-analyser/cache）'),
     maxFileSizeMb: Schema.number().default(50).description('允许的最大 .osu 文件大小（MB）'),
 })

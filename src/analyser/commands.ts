@@ -8,18 +8,20 @@ import {
 } from './core/analysis'
 import { renderCard, buildCardData } from './render'
 import { downloadBeatmap, parseBeatmapId } from './core/downloader'
-import { AnalysisCache } from './core/cache'
+import { BeatmapCache } from './core/cache'
 
 const promptTimeout = 1000 * 60
 
 // ─── Command Registration ───────────────────────────────────────────────────
 
-export function apply(ctx: Context, config: AnalyserConfig, cache: AnalysisCache) {
+export function apply(ctx: Context, config: AnalyserConfig, cache: BeatmapCache) {
     ctx.command('mania-analyse [input:text]', { authority: 1 })
         .alias('ma')
-        .action(async ({ session }, input) => {
+        .option('refresh', '-r 强制重新下载谱面文件')
+        .action(async ({ session, options }, input) => {
             let osuContent: string | null = null
             let resolvedBeatmapId: string | null = null
+            const forceRefresh = options?.refresh ?? false
 
             // Parse +mods from input (e.g. "4812662 +dthr")
             let mods: ParsedMods | null = null
@@ -37,27 +39,35 @@ export function apply(ctx: Context, config: AnalyserConfig, cache: AnalysisCache
                 const beatmapId = parseBeatmapId(input)
                 if (beatmapId) {
                     resolvedBeatmapId = String(beatmapId)
-                    // Check cache first
-                    const modsKey = mods?.displayString ?? 'NM'
-                    const cached = cache.get(resolvedBeatmapId, modsKey)
-                    if (cached) {
-                        return await formatResult(ctx, cached.result, null, config, mods)
+
+                    // If refresh requested, invalidate cached file
+                    if (forceRefresh) {
+                        cache.invalidate(resolvedBeatmapId)
                     }
 
-                    try {
-                        osuContent = await downloadBeatmap(
-                            ctx,
-                            beatmapId,
-                            config.mirrors?.length > 0
-                                ? config.mirrors
-                                : undefined
-                        )
-                    } catch (error) {
-                        const message =
-                            error instanceof Error
-                                ? error.message
-                                : String(error)
-                        return session.text('.download-failed', [message])
+                    // Try reading .osu content from cache
+                    const cached = cache.get(resolvedBeatmapId)
+                    if (cached) {
+                        osuContent = cached
+                    } else {
+                        // Cache miss or refresh: download and save
+                        try {
+                            osuContent = await downloadBeatmap(
+                                ctx,
+                                beatmapId,
+                                config.mirrors?.length > 0
+                                    ? config.mirrors
+                                    : undefined
+                            )
+                            // Save to cache
+                            cache.set(resolvedBeatmapId, osuContent)
+                        } catch (error) {
+                            const message =
+                                error instanceof Error
+                                    ? error.message
+                                    : String(error)
+                            return session.text('.download-failed', [message])
+                        }
                     }
                 } else {
                     // Treat as a direct URL to a .osu file
@@ -122,7 +132,6 @@ export function apply(ctx: Context, config: AnalyserConfig, cache: AnalysisCache
                 enableSvDetection: config.enableSV,
                 enablePatternAnalysis: true,
                 enableEtternaAnalysis: true,
-                // Apply mod rate
                 speedRate: mods?.rate ?? 1.0
             }
 
@@ -139,10 +148,6 @@ export function apply(ctx: Context, config: AnalyserConfig, cache: AnalysisCache
                         ...options_,
                         estimatorAlgorithm: 'Sunny' // base, will be overridden by mixed
                     })
-                    // Store in cache
-                    if (resolvedBeatmapId) {
-                        cache.set(resolvedBeatmapId, mods?.displayString ?? 'NM', result)
-                    }
                     return await formatResult(
                         ctx,
                         result,
@@ -162,10 +167,6 @@ export function apply(ctx: Context, config: AnalyserConfig, cache: AnalysisCache
 
             try {
                 const result = await analyzeMap(osuContent, options_)
-                // Store in cache
-                if (resolvedBeatmapId) {
-                    cache.set(resolvedBeatmapId, mods?.displayString ?? 'NM', result)
-                }
                 return await formatResult(ctx, result, null, config, mods)
             } catch (error) {
                 const message =
