@@ -48,34 +48,24 @@ ma <beatmap_id_or_url> [+mods]
 | ------------------------- | ---------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------ |
 | `analyser.algorithm`      | `'mixed' \| 'azusa' \| 'sunny' \| 'daniel'`                | `'mixed'`  | 难度估算算法                                                                   |
 | `analyser.etternaVersion` | `'0.68.0' \| '0.70.0' \| '0.72.0' \| '0.72.3' \| '0.74.0'` | `'0.72.3'` | Etterna MinaCalc 版本                                                          |
-| `analyser.enableVibro`    | `boolean`                                                  | `true`     | 启用振动谱面检测                                                               |
+| `analyser.enableVibro`    | `boolean`                                                  | `true`     | 启用 vibro 谱面检测                                                            |
 | `analyser.enableSV`       | `boolean`                                                  | `true`     | 启用 SV 检测                                                                   |
 | `analyser.cardBody`       | `'auto' \| 'pattern' \| 'etterna' \| 'graph'`              | `'auto'`   | 卡片主体内容                                                                   |
 | `analyser.mirrors`        | `string[]`                                                 | `[]`       | 自定义 .osu 文件下载镜像 URL（使用 `{id}` 作为谱面 ID 占位符，留空使用默认源） |
 
-## 与原项目的差异
-
-详细差异说明见 [DIFFERENCES.md](./DIFFERENCES.md)
-
 ## 致谢
 
-- 谱面分析器移植自 [LeoBlackMT/osumania_map_analyser](https://github.com/LeoBlackMT/osumania_map_analyser)（v1.5.0）
+- 谱面分析器移植自 [LeoBlackMT/osumania_map_analyser](https://github.com/LeoBlackMT/osumania_map_analyser)，有部分改动，查看 [DIFFERENCES.md](./DIFFERENCES.md) 了解。
 - 希腊字母资源来自 [Brofriendosu/Dan-Maker](https://github.com/Brofriendosu/Dan-Maker/tree/main/assets/greek)
 - Etterna MinaCalc 来自 [Etterna](https://github.com/etternagame/etterna) 项目
 - Interlude SR 来自 [YAVSRG](https://github.com/YAVSRG/YAVSRG) 项目
-
-## 素材声明
-
-本项目使用了部分来自 [osu!](https://osu.ppy.sh) 官方的素材（字体、图标等），仅用于样式优化，纯开源免费分发。
-
-根据 [osu-web 项目的许可协议](https://github.com/ppy/osu-web/blob/84f545fd5dd769bc0e37131e7fd6a4dc81389147/README.md)，使用这些素材的项目必须：
-- 注明出处
-- 确保项目遵循相同的开源许可协议
-
-因此本项目采用 AGPL-3.0 许可协议。
+- 本项目使用了部分来自 [osu!](https://osu.ppy.sh) 官方的素材（字体、图标等），仅用于布局界面，纯开源免费分发。
 
 ## License
 
-AGPL-3.0 — 详见 [LICENSE](./LICENSE)
+根据 [osu-web 项目的许可协议](https://github.com/ppy/osu-web/README.md)，使用这些素材的项目必须：
 
-简而言之，如果您想使用该项目中的任何代码、设计或艺术元素，就必须注明出处，并确保您自己的项目也遵循相同的开源许可协议。
+- 注明出处
+- 确保项目遵循相同的开源许可协议
+
+因此本项目采用 [AGPL-3.0 许可协议](./LICENSE)。

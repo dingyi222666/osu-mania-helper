@@ -25,8 +25,15 @@ export async function formatResult(
             // Inject mod info into card data if mods are active
             if (mods && mods.codes.length > 0) {
                 ;(cardData as any).modsDisplay = mods.codes.join('')
+                // Only show rate extender for non-default rates
+                // Default: DT/NC = 1.5, HT/DC = 0.75
+                const isDT = mods.codes.includes('DT') || mods.codes.includes('NC')
+                const isHT = mods.codes.includes('HT') || mods.codes.includes('DC')
+                const defaultRate = isDT ? 1.5 : isHT ? 0.75 : 1.0
                 ;(cardData as any).rateDisplay =
-                    mods.rate !== 1.0 ? `${mods.rate.toFixed(2)}x` : null
+                    (mods.rate !== 1.0 && mods.rate !== defaultRate)
+                        ? `${mods.rate.toFixed(2)}x`
+                        : null
             }
             // Fetch beatmap owners from API for mapper line
             if (cardData.beatmapId) {

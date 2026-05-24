@@ -295,6 +295,7 @@ function barGradientFor(msdValue: number): string {
 // ─── HTML template ──────────────────────────────────────────────────────────
 
 import { getCardTemplate } from './templates/cardTemplate'
+import { MOD_SVG_DT, MOD_SVG_NC, MOD_SVG_HT, MOD_SVG_DC, MOD_SVG_HR, MOD_SVG_HD, MOD_SVG_EZ, MOD_SVG_NF, MOD_SVG_FL, MOD_SVG_FI, MOD_SVG_SD, MOD_SVG_PF, MOD_SVG_MR, MOD_SVG_IN, MOD_SVG_HO } from './modIcons'
 
 // ─── Radar Chart SVG generation ─────────────────────────────────────────────
 
@@ -538,17 +539,18 @@ function buildModsHtml(modsDisplay?: string, rateDisplay?: string | null): strin
         mods.push(modsDisplay.slice(i, i + 2))
     }
 
-    // osu! official mod type color mapping
-    // DifficultyIncrease: hsl(0, 100%, 70%) - red
-    // DifficultyReduction: hsl(90, 100%, 70%) - lime
-    // Conversion: hsl(255, 100%, 70%) - purple
-    // Automation: hsl(200, 100%, 70%) - blue
-    // Fun: hsl(333, 100%, 70%) - pink
-    // System: #ffcc22 - yellow
-    function modColor(mod: string): string {
+    // osu! mod type colour (from osu-web: colors.less)
+    // --c-saturation-1: 100%, --c-lightness-1: 70%
+    //   DifficultyIncrease (red-1): hsl(360, 100%, 70%)
+    //   DifficultyReduction (lime-1): hsl(90, 100%, 70%)
+    //   Conversion (purple-1): hsl(255, 100%, 70%)
+    //   Automation (blue-1): hsl(200, 100%, 70%)
+    //   Fun (pink-1): hsl(333, 100%, 70%)
+    //   System: #ffcc22
+    function modTypeColour(mod: string): string {
         switch (mod) {
             case 'DT': case 'NC': case 'HR': case 'HD': case 'FL': case 'FI': case 'SD': case 'PF':
-                return 'hsl(0, 100%, 70%)'
+                return 'hsl(360, 100%, 70%)'
             case 'HT': case 'DC': case 'EZ': case 'NF':
                 return 'hsl(90, 100%, 70%)'
             case 'IN': case 'HO': case 'MR':
@@ -558,32 +560,26 @@ function buildModsHtml(modsDisplay?: string, rateDisplay?: string | null): strin
         }
     }
 
-    // Darken color for extender background (osu! uses color-mix(in srgb, black, color 26.3%))
-    function modExtenderBg(mod: string): string {
+    // Map mod acronym to its SVG icon data URI
+    // Extracted from osu-web: public/images/badges/mods/mod-*.svg
+    function modIconSvg(mod: string): string {
         switch (mod) {
-            case 'DT': case 'NC': case 'HR': case 'HD': case 'FL': case 'FI': case 'SD': case 'PF':
-                return 'hsl(0, 100%, 18%)'
-            case 'HT': case 'DC': case 'EZ': case 'NF':
-                return 'hsl(90, 100%, 18%)'
-            case 'IN': case 'HO': case 'MR':
-                return 'hsl(255, 100%, 18%)'
-            default:
-                return 'hsl(200, 100%, 18%)'
-        }
-    }
-
-    // Foreground color for mod icon text (osu! uses color-mix(in srgb-linear, black, color 10%))
-    // This is very dark, almost black with a tint. Simplified to a dark version.
-    function modFgColor(mod: string): string {
-        switch (mod) {
-            case 'DT': case 'NC': case 'HR': case 'HD': case 'FL': case 'FI': case 'SD': case 'PF':
-                return 'hsl(0, 100%, 8%)'
-            case 'HT': case 'DC': case 'EZ': case 'NF':
-                return 'hsl(90, 100%, 8%)'
-            case 'IN': case 'HO': case 'MR':
-                return 'hsl(255, 100%, 8%)'
-            default:
-                return 'hsl(200, 100%, 8%)'
+            case 'DT': return MOD_SVG_DT
+            case 'NC': return MOD_SVG_NC
+            case 'HT': return MOD_SVG_HT
+            case 'DC': return MOD_SVG_DC
+            case 'HR': return MOD_SVG_HR
+            case 'HD': return MOD_SVG_HD
+            case 'EZ': return MOD_SVG_EZ
+            case 'NF': return MOD_SVG_NF
+            case 'FL': return MOD_SVG_FL
+            case 'FI': return MOD_SVG_FI
+            case 'SD': return MOD_SVG_SD
+            case 'PF': return MOD_SVG_PF
+            case 'MR': return MOD_SVG_MR
+            case 'IN': return MOD_SVG_IN
+            case 'HO': return MOD_SVG_HO
+            default: return ''
         }
     }
 
@@ -592,15 +588,18 @@ function buildModsHtml(modsDisplay?: string, rateDisplay?: string | null): strin
 
     let html = ''
     for (const mod of mods) {
-        const bg = modColor(mod)
-        const fg = modFgColor(mod)
-        const extBg = modExtenderBg(mod)
+        const colour = modTypeColour(mod)
         const hasRate = speedMods.has(mod) && rateDisplay
+        const iconSvg = modIconSvg(mod)
 
-        html += `<span class="mod-group" style="--mod-bg:${bg};--mod-fg:${fg};--mod-extender-bg:${extBg}">`
-        html += `<span class="mod-icon">${mod}</span>`
+        html += `<span class="mod-group" style="--mod-colour:${colour}">`
+        html += `<span class="mod-icon"><span class="mod-icon__bg"></span>`
+        if (iconSvg) {
+            html += `<span class="mod-icon__fg" style="mask-image:url(&quot;${iconSvg}&quot;)"></span>`
+        }
+        html += `</span>`
         if (hasRate) {
-            html += `<span class="mod-extender">${escapeHtml(rateDisplay!)}</span>`
+            html += `<span class="mod-extender"><span>${escapeHtml(rateDisplay!)}</span></span>`
         }
         html += `</span>`
     }

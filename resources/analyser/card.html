@@ -1,430 +1,453 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<style>
-{{fontCss}}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-:root {
-    --title-bar-bg: rgb(46, 53, 56);
-    --body-bg: rgb(34, 40, 42);
-    --pill-bg: rgb(23, 26, 28);
-    --text-primary: #ffffff;
-    --text-secondary: rgb(219, 233, 240);
-    --text-mapper: rgb(166, 200, 217);
-    --font-stack: Torus, Inter, "Helvetica Neue", Tahoma, Arial, "Hiragino Kaku Gothic ProN", Meiryo, "Microsoft YaHei", "Apple SD Gothic Neo", sans-serif;
-}
-html, body {
-    width: 100%; height: 100%;
-    color: var(--text-primary);
-    font-family: var(--font-stack);
-    background: transparent;
-}
-body { padding: 0; }
+    <head>
+        <meta charset="UTF-8" />
+        <style>
+            {{fontCss}}
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            :root {
+                --title-bar-bg: rgb(46, 53, 56);
+                --body-bg: rgb(34, 40, 42);
+                --pill-bg: rgb(23, 26, 28);
+                --text-primary: #ffffff;
+                --text-secondary: rgb(219, 233, 240);
+                --text-mapper: rgb(166, 200, 217);
+                --font-stack: Torus, Inter, "Helvetica Neue", Tahoma, Arial, "Hiragino Kaku Gothic ProN", Meiryo, "Microsoft YaHei", "Apple SD Gothic Neo", sans-serif;
+            }
+            html, body {
+                width: 100%; height: 100%;
+                color: var(--text-primary);
+                font-family: var(--font-stack);
+                background: transparent;
+            }
+            body { padding: 0; }
 
-/* ─── Card Shell ─── */
-.card {
-    width: 580px;
-    min-width: 580px; max-width: 580px;
-    overflow: hidden;
-    box-shadow: rgba(0, 0, 0, 0.25) 0px 1px 3px 0px;
-    background: var(--body-bg);
-}
+            /* ─── Card Shell ─── */
+            .card {
+                width: 580px;
+                min-width: 580px; max-width: 580px;
+                overflow: hidden;
+                box-shadow: rgba(0, 0, 0, 0.25) 0px 1px 3px 0px;
+                background: var(--body-bg);
+            }
 
-/* ─── Title Bar (score-beatmap) ─── */
-.title-bar {
-    background: var(--title-bar-bg);
-    padding: 10px 30px;
-    display: block;
-}
-.title-bar__name {
-    font-size: 18px;
-    font-weight: 400;
-    color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.35;
-    margin-bottom: 6px;
-}
-.title-bar__song-title {
-    font-size: 18px;
-    font-weight: 400;
-}
-.title-bar__song-artist {
-    font-size: 15px;
-    font-weight: 400;
-}
-.title-bar__meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: nowrap;
-    font-size: 14px;
-    color: var(--text-primary);
-    line-height: 1.25;
-}
-.diff-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    padding: 0px 6.5px;
-    border-radius: 10000px;
-    font-size: 12px;
-    font-weight: 800;
-    line-height: 1.25;
-    white-space: nowrap;
-    height: 18px;
-}
-.diff-badge__star {
-    font-family: 'Font Awesome 5 Free';
-    font-weight: 900;
-    font-size: 8px;
-    margin-right: 2px;
-    line-height: 1;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-.diff-badge__star::before {
-    content: '\f005';
-}
-.mania-icon {
-    display: inline-flex;
-    align-items: center;
-    margin-right: 2px;
-    opacity: 0.9;
-}
-.mania-icon::before {
-    content: '\e802';
-    font-family: 'FontAwesomeExtra';
-    font-weight: 400;
-    font-size: 14px;
-    line-height: 1;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-.title-bar__version {
-    font-weight: 400;
-    color: var(--text-primary);
-    font-size: 13px;
-}
-.title-bar__mapper {
-    color: var(--text-secondary);
-    font-size: 11px;
-    font-weight: 400;
-}
-.title-bar__mapper-name {
-    color: var(--text-mapper);
-    font-weight: 400;
-}
+            /* ─── Title Bar (score-beatmap) ─── */
+            .title-bar {
+                background: var(--title-bar-bg);
+                padding: 10px 30px;
+                display: block;
+            }
+            .title-bar__name {
+                font-size: 18px;
+                font-weight: 400;
+                color: var(--text-primary);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                line-height: 1.35;
+                margin-bottom: 6px;
+            }
+            .title-bar__song-title {
+                font-size: 18px;
+                font-weight: 400;
+            }
+            .title-bar__song-artist {
+                font-size: 15px;
+                font-weight: 400;
+            }
+            .title-bar__meta {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: nowrap;
+                font-size: 14px;
+                color: var(--text-primary);
+                line-height: 1.25;
+            }
+            .diff-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 2px;
+                padding: 0px 6.5px;
+                border-radius: 10000px;
+                font-size: 12px;
+                font-weight: 800;
+                line-height: 1.25;
+                white-space: nowrap;
+                height: 18px;
+            }
+            .diff-badge__star {
+                font-family: 'Font Awesome 5 Free';
+                font-weight: 900;
+                font-size: 8px;
+                margin-right: 2px;
+                line-height: 1;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+            .diff-badge__star::before {
+                content: '\f005';
+            }
+            .mania-icon {
+                display: inline-flex;
+                align-items: center;
+                margin-right: 2px;
+                opacity: 0.9;
+            }
+            .mania-icon::before {
+                content: '\e802';
+                font-family: 'FontAwesomeExtra';
+                font-weight: 400;
+                font-size: 14px;
+                line-height: 1;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+            .title-bar__version {
+                font-weight: 400;
+                color: var(--text-primary);
+                font-size: 13px;
+            }
+            .title-bar__mapper {
+                color: var(--text-secondary);
+                font-size: 11px;
+                font-weight: 400;
+            }
+            .title-bar__mapper-name {
+                color: var(--text-mapper);
+                font-weight: 400;
+            }
 
-/* ─── Main Panel (score-info) ─── */
-.main-panel {
-    position: relative;
-    height: 200px;
-    min-height: 180px;
-    padding: 10px 30px;
-    display: flex;
-    align-items: center;
-}
-.main-panel__cover {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: 0;
-}
-.main-panel__overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(23, 26, 28, 0.75);
-    z-index: 0;
-}
-.main-panel__content {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    gap: 20px;
-}
-.main-panel__left {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-}
-.main-panel__rating {
-    font-size: 56px;
-    font-weight: 300;
-    line-height: 56px;
-    color: var(--text-primary);
-    font-variant-numeric: tabular-nums lining-nums;
-}
-.main-panel__estimator {
-    font-size: 12px;
-    font-weight: 400;
-    color: var(--text-secondary);
-    opacity: 0.9;
-}
-.main-panel__ln-line {
-    font-size: 28px;
-    font-weight: 300;
-    line-height: 32px;
-    color: var(--text-secondary);
-    font-variant-numeric: tabular-nums lining-nums;
-}
-.main-panel__ln-label {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    opacity: 0.7;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-right: 6px;
-}
-.main-panel__right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: flex-end;
-    gap: 8px;
-    flex-shrink: 0;
-    align-self: flex-end;
-}
+            /* ─── Main Panel (score-info) ─── */
+            .main-panel {
+                position: relative;
+                height: 200px;
+                min-height: 180px;
+                padding: 10px 30px;
+                display: flex;
+                align-items: center;
+            }
+            .main-panel__cover {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                z-index: 0;
+            }
+            .main-panel__overlay {
+                position: absolute;
+                inset: 0;
+                background: rgba(23, 26, 28, 0.75);
+                z-index: 0;
+            }
+            .main-panel__content {
+                position: relative;
+                z-index: 1;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+                gap: 20px;
+            }
+            .main-panel__left {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                min-width: 0;
+            }
+            .main-panel__rating {
+                font-size: 56px;
+                font-weight: 300;
+                line-height: 56px;
+                color: var(--text-primary);
+                font-variant-numeric: tabular-nums lining-nums;
+            }
+            .main-panel__estimator {
+                font-size: 12px;
+                font-weight: 400;
+                color: var(--text-secondary);
+                opacity: 0.9;
+            }
+            .main-panel__ln-line {
+                font-size: 28px;
+                font-weight: 300;
+                line-height: 32px;
+                color: var(--text-secondary);
+                font-variant-numeric: tabular-nums lining-nums;
+            }
+            .main-panel__ln-label {
+                font-size: 11px;
+                font-weight: 600;
+                color: var(--text-secondary);
+                opacity: 0.7;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                margin-right: 6px;
+            }
+            .main-panel__right {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                justify-content: flex-end;
+                gap: 8px;
+                flex-shrink: 0;
+                align-self: flex-end;
+            }
 
-.main-panel__tags {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    flex-wrap: wrap;
-}
+            .main-panel__tags {
+                position: relative;
+                z-index: 1;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                flex-wrap: wrap;
+            }
 
-/* ─── Pills / Tags ─── */
-.pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 0px 8px;
-    border-radius: 10000px;
-    font-size: 11px;
-    font-weight: 400;
-    text-transform: uppercase;
-    line-height: 1.8;
-    white-space: nowrap;
-}
-.pill--mode {
-    background: var(--pill-bg);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: var(--text-primary);
-    font-size: 10px;
-    padding: 2px 7px;
-    letter-spacing: 0.5px;
-}
+            /* ─── Pills / Tags ─── */
+            .pill {
+                display: inline-flex;
+                align-items: center;
+                padding: 0px 8px;
+                border-radius: 10000px;
+                font-size: 11px;
+                font-weight: 400;
+                text-transform: uppercase;
+                line-height: 1.8;
+                white-space: nowrap;
+            }
+            .pill--mode {
+                background: var(--pill-bg);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                color: var(--text-primary);
+                font-size: 10px;
+                padding: 2px 7px;
+                letter-spacing: 0.5px;
+            }
 
-/* ─── Mod Icons (osu! style) ─── */
-.mod-group {
-    display: inline-flex;
-    align-items: center;
-    height: 20px;
-}
-.mod-icon {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 20px;
-    border-radius: 5px;
-    font-size: 9px;
-    font-weight: 900;
-    text-transform: uppercase;
-    color: var(--mod-fg);
-    background: var(--mod-bg);
-    z-index: 1;
-}
-.mod-extender {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 20px;
-    margin-left: -6px;
-    padding: 0 6px 0 10px;
-    border-radius: 0 5px 5px 0;
-    font-size: 9px;
-    font-weight: 700;
-    color: var(--mod-bg);
-    background: var(--mod-extender-bg);
-    z-index: 0;
-}
-.mod-extender::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 0;
-    height: 0;
-    border-top: 10px solid transparent;
-    border-bottom: 10px solid transparent;
-    border-left: 6px solid var(--mod-bg);
-}
+            /* ─── Mod Icons (osu! authentic style with SVG masks) ─── */
+            .mod-group {
+                display: inline-flex;
+                align-items: center;
+                font-size: 22px;
+                height: 1em;
+                position: relative;
+                --mod-fg: color-mix(in srgb-linear, #000, var(--mod-colour) 10%);
+                --mod-extender-bg: color-mix(in srgb, #000, var(--mod-colour) 26.3%);
+            }
+            .mod-icon {
+                position: relative;
+                width: 1.42em;
+                height: 1em;
+            }
+            .mod-icon__bg {
+                position: absolute;
+                inset: 0;
+                background-color: var(--mod-colour);
+                mask-image: url("data:image/svg+xml,%3Csvg width='100' height='70' viewBox='0 0 100 70' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M25.5678 70C25.1561 69.9742 24.7572 69.9742 24.3455 69.9354C23.535 69.8579 22.7244 69.7029 21.9396 69.4704C20.7688 69.1216 19.6367 68.6049 18.6074 67.9461C17.5781 67.2873 16.6389 66.4735 15.8412 65.5435C15.1336 64.7167 15.005 64.4584 14.426 63.5412L1.72742 41.4523C1.22565 40.4835 1.07126 40.251 0.71102 39.2176C0.31218 38.055 0.0805947 36.8407 0.0162656 35.6136C-0.0480635 34.3864 0.0805947 33.1463 0.363643 31.9579C0.55663 31.157 0.826813 30.382 1.16132 29.6328C1.32858 29.2582 1.53443 28.9094 1.72742 28.5348L14.426 6.45876C15.0178 5.54161 15.1336 5.28326 15.8412 4.45654C16.6389 3.52648 17.5781 2.71268 18.6074 2.05388C19.6367 1.39509 20.7688 0.878391 21.9396 0.529618C22.7244 0.297103 23.5221 0.142093 24.3455 0.0645876C24.7572 0.025835 25.1561 0.025835 25.5678 0H74.4451C75.5258 0.05167 75.8088 0.025835 76.8767 0.232515C78.0861 0.46503 79.244 0.865473 80.3376 1.43384C81.4312 2.00221 82.4347 2.71268 83.3225 3.56523C83.9143 4.1336 84.4547 4.75364 84.9179 5.42535C85.1494 5.76121 85.3553 6.10998 85.574 6.45876L98.2726 28.5348C98.4656 28.8965 98.6586 29.2582 98.8387 29.6328C99.1732 30.382 99.4434 31.157 99.6364 31.9579C99.9194 33.1593 100.048 34.3864 99.9837 35.6136C99.9194 36.8407 99.6878 38.0679 99.289 39.2176C98.9287 40.251 98.7743 40.4835 98.2726 41.4523L85.574 63.5283C84.9822 64.4455 84.8664 64.7038 84.1588 65.5305C83.3611 66.4606 82.4219 67.2744 81.3926 67.9332C80.3633 68.592 79.2312 69.1087 78.0604 69.4575C77.2756 69.69 76.4779 69.845 75.6545 69.9225C75.2428 69.9612 74.8439 69.9612 74.4322 69.9871C58.1569 70 41.8559 70 25.5678 70Z' fill='white'/%3E%3C/svg%3E");
+                mask-size: contain;
+                mask-position: center;
+                mask-repeat: no-repeat;
+            }
+            .mod-icon__fg {
+                position: absolute;
+                inset: 0;
+                margin: 0.2em;
+                background-color: var(--mod-fg);
+                mask-size: contain;
+                mask-position: center;
+                mask-repeat: no-repeat;
+            }
+            .mod-extender {
+                width: 2.2em;
+                height: 1em;
+                background-color: var(--mod-extender-bg);
+                mask-image: url("data:image/svg+xml,%3Csvg width='155' height='70' viewBox='0 0 155 70' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M124.773 0C126.022 0.05167 126.35 0.0257417 127.584 0.232422C128.981 0.464947 130.319 0.865277 131.583 1.43359C132.847 2.00196 134.006 2.71289 135.032 3.56543C135.716 4.13375 136.341 4.75415 136.876 5.42578C137.143 5.76149 137.381 6.11038 137.634 6.45898L152.308 28.5352C152.531 28.8968 152.754 29.2583 152.962 29.6328C153.348 30.382 153.661 31.1572 153.884 31.958C154.211 33.1592 154.359 34.3863 154.285 35.6133C154.211 36.8404 153.943 38.0681 153.482 39.2178C153.066 40.2511 152.887 40.4835 152.308 41.4521L137.634 63.5283C136.95 64.4455 136.816 64.7036 135.998 65.5303C135.076 66.4603 133.991 67.2748 132.802 67.9336C131.612 68.5923 130.304 69.1083 128.951 69.457C128.044 69.6895 127.122 69.8453 126.171 69.9229C125.695 69.9616 125.234 69.9615 124.759 69.9873C112.082 69.996 46.9058 69.9971 0 69.998C2.62164 69.9969 4.908 69.9985 6.76367 69.9971C7.18743 69.9712 7.59871 69.9714 8.02246 69.9326C8.86969 69.8551 9.69052 69.7002 10.498 69.4678C11.7031 69.119 12.8693 68.6022 13.9287 67.9434C14.988 67.2845 15.9544 66.4702 16.7754 65.54C17.5037 64.7132 17.6233 64.4544 18.2324 63.5371L31.3018 41.458C31.8182 40.4892 31.9779 40.2569 32.3486 39.2236C32.7591 38.074 32.9972 36.8463 33.0635 35.6191C33.1297 34.3919 32.9973 33.1643 32.7061 31.9629C32.5074 31.1619 32.2291 30.386 31.8848 29.6367C31.6994 29.2622 31.5003 28.9007 31.3018 28.5391L18.2324 6.45996C18.0073 6.11114 17.795 5.76168 17.5566 5.42578C17.08 4.7541 16.5241 4.13379 15.915 3.56543C15.0014 2.71278 13.9683 2.00203 12.8428 1.43359C11.7172 0.865151 10.525 0.464972 9.28027 0.232422C8.18116 0.0257121 7.8897 0.0516774 6.77734 0H124.773Z' fill='white'/%3E%3C/svg%3E");
+                mask-size: contain;
+                mask-position: center;
+                mask-repeat: no-repeat;
+                margin-left: -0.5em;
+                padding-left: 0.5em;
+                padding-right: 3px;
+                padding-bottom: 1px;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--mod-colour);
+            }
+            .mod-extender span {
+                font-size: 0.5em;
+            }
 
-.pill--sv {
-    background: rgba(255, 56, 106, 0.9);
-    border: 1px solid rgba(255, 198, 215, 0.85);
-    color: #fff6f8;
-    font-size: 10px;
-    padding: 2px 7px;
-}
-.pill--vibro {
-    background: rgba(255, 180, 50, 0.85);
-    border: 1px solid rgba(255, 220, 150, 0.7);
-    color: #fff;
-    font-size: 10px;
-    padding: 2px 7px;
-}
+            .pill--sv {
+                background: rgba(255, 56, 106, 0.9);
+                border: 1px solid rgba(255, 198, 215, 0.85);
+                color: #fff6f8;
+                font-size: 10px;
+                padding: 2px 7px;
+            }
+            .pill--vibro {
+                background: rgba(255, 180, 50, 0.85);
+                border: 1px solid rgba(255, 220, 150, 0.7);
+                color: #fff;
+                font-size: 10px;
+                padding: 2px 7px;
+            }
 
-/* ─── Stats Section (score-stats) ─── */
-.stats-section {
-    background: var(--body-bg);
-    padding: 16px 30px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-.stats-meta {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
-    gap: 2px;
-}
-.stat-chip {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    text-align: center;
-}
-.stat-chip__label {
-    font-size: 10px;
-    font-weight: 400;
-    color: var(--text-primary);
-    text-transform: uppercase;
-    padding: 0px 8px;
-    border-radius: 10000px;
-    background: var(--pill-bg);
-    line-height: 1.8;
-    white-space: nowrap;
-}
-.stat-chip__value {
-    font-size: 18px;
-    font-weight: 400;
-    color: var(--text-primary);
-    line-height: 1.4;
-    text-align: center;
-}
+            /* ─── Stats Section (score-stats) ─── */
+            .stats-section {
+                background: var(--body-bg);
+                padding: 16px 30px;
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
+            .stats-meta {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+                gap: 2px;
+            }
+            .stat-chip {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+                text-align: center;
+            }
+            .stat-chip__label {
+                font-size: 10px;
+                font-weight: 400;
+                color: var(--text-primary);
+                text-transform: uppercase;
+                padding: 0px 8px;
+                border-radius: 10000px;
+                background: var(--pill-bg);
+                line-height: 1.8;
+                white-space: nowrap;
+            }
+            .stat-chip__value {
+                font-size: 18px;
+                font-weight: 400;
+                color: var(--text-primary);
+                line-height: 1.4;
+                text-align: center;
+            }
 
-/* ─── Radar Chart Section ─── */
-.radar-section {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    flex-wrap: wrap;
-}
-.radar-chart {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-.radar-chart__title {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-.radar-chart svg text {
-    font-family: var(--font-stack);
-}
+            /* ─── Radar Chart Section ─── */
+            .radar-section {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 16px;
+                flex-wrap: wrap;
+            }
+            .radar-chart {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+            }
+            .radar-chart__title {
+                font-size: 11px;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+            .radar-chart svg text {
+                font-family: var(--font-stack);
+            }
 
-/* ─── Powered By Footer ─── */
-.powered-by {
-    padding: 5px 30px 6px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 10px;
-    font-weight: 400;
-    color: rgba(255, 255, 255, 0.35);
-    background: var(--body-bg);
-    letter-spacing: 0.02em;
-}
-</style>
-</head>
-<body>
-<section class="card">
-    <!-- Title Bar (score-beatmap) -->
-    <div class="title-bar">
-        <div class="title-bar__name"><span class="title-bar__song-title">{{titleText}}</span> <span class="title-bar__song-artist">by {{artistText}}</span></div>
-        <div class="title-bar__meta">
-            <span class="mania-icon"></span>
-            <span class="diff-badge" style="background:{{starColor}};color:{{badgeTextColor}}">
-                <span class="diff-badge__star"></span>{{starRating}}
-            </span>
-            <span class="title-bar__version">{{version}}</span>
-            <span class="title-bar__mapper">{{mapperHtml}}</span>
-        </div>
-    </div>
-
-    <!-- Main Panel (score-info) -->
-    <div class="main-panel">
-        {{coverImgTag}}
-        <div class="main-panel__overlay"></div>
-        <div class="main-panel__content">
-            <div class="main-panel__left">
-                <div class="main-panel__rating">{{difficultyTextRc}}</div>
-                {{difficultyLnHtml}}
-            </div>
-            <div class="main-panel__right">
-                <div class="main-panel__tags">
-                    {{modsHtml}}
-                    {{flagsHtml}}
+            /* ─── Powered By Footer ─── */
+            .powered-by {
+                padding: 5px 30px 6px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 10px;
+                font-weight: 400;
+                color: rgba(255, 255, 255, 0.35);
+                background: var(--body-bg);
+                letter-spacing: 0.02em;
+            }
+        </style>
+    </head>
+    <body>
+        <section class="card">
+            <!-- Title Bar (score-beatmap) -->
+            <div class="title-bar">
+                <div class="title-bar__name">
+                    <span class="title-bar__song-title">{{titleText}}</span>
+                    <span class="title-bar__song-artist">
+                        by {{artistText}}
+                    </span>
+                </div>
+                <div class="title-bar__meta">
+                    <span class="mania-icon"></span>
+                    <span
+                        class="diff-badge"
+                        style="background:{{starColor}};color:{{badgeTextColor}}"
+                    >
+                        <span class="diff-badge__star"></span>
+                        {{starRating}}
+                    </span>
+                    <span class="title-bar__version">{{version}}</span>
+                    <span class="title-bar__mapper">{{mapperHtml}}</span>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Stats Section (score-stats) -->
-    <div class="stats-section">
-        <div class="stats-meta">
-            <div class="stat-chip">
-                <span class="stat-chip__label">Type</span>
-                <span class="stat-chip__value" style="{{modeTagValueStyle}}">{{modeTag}}</span>
+            <!-- Main Panel (score-info) -->
+            <div class="main-panel">
+                {{coverImgTag}}
+                <div class="main-panel__overlay"></div>
+                <div class="main-panel__content">
+                    <div class="main-panel__left">
+                        <div class="main-panel__rating">
+                            {{difficultyTextRc}}
+                        </div>
+                        {{difficultyLnHtml}}
+                    </div>
+                    <div class="main-panel__right">
+                        <div class="main-panel__tags">
+                            {{modsHtml}} {{flagsHtml}}
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="stat-chip">
-                <span class="stat-chip__label">LN</span>
-                <span class="stat-chip__value">{{lnPercent}}%</span>
+
+            <!-- Stats Section (score-stats) -->
+            <div class="stats-section">
+                <div class="stats-meta">
+                    <div class="stat-chip">
+                        <span class="stat-chip__label">Type</span>
+                        <span
+                            class="stat-chip__value"
+                            style="{{modeTagValueStyle}}"
+                        >
+                            {{modeTag}}
+                        </span>
+                    </div>
+                    <div class="stat-chip">
+                        <span class="stat-chip__label">LN</span>
+                        <span class="stat-chip__value">{{lnPercent}}%</span>
+                    </div>
+                    {{bpmChipHtml}} {{ettOverallHtml}}
+                </div>
+
+                <!-- Radar Charts -->
+                <div class="radar-section" style="display:{{radarDisplay}}">
+                    {{radarContent}}
+                </div>
             </div>
-            {{bpmChipHtml}}
-            {{ettOverallHtml}}
-        </div>
 
-        <!-- Radar Charts -->
-        <div class="radar-section" style="display:{{radarDisplay}}">
-            {{radarContent}}
-        </div>
-    </div>
-
-    <!-- Powered By -->
-    <div class="powered-by">
-        <span>Star = Estimated Difficulty, MSD = Etterna Actual Value</span>
-        <span>Powered by osumania_map_analyser &amp; Koishi</span>
-    </div>
-</section>
-</body>
+            <!-- Powered By -->
+            <div class="powered-by">
+                <span>
+                    Star = Estimated Difficulty, MSD = Etterna Actual Value
+                </span>
+                <span>Powered by ManiaMapAnalyser(Leo_Black) &amp; Koishi</span>
+            </div>
+        </section>
+    </body>
 </html>
