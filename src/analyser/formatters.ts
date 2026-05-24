@@ -1,6 +1,7 @@
 import { Context, h } from 'koishi'
 import { AnalyserConfig } from './config'
 import { type AnalysisResult } from './core/analysis'
+import { fetchBeatmapOwners } from './core/downloader'
 import { renderCard, buildCardData } from './render'
 import { type ParsedMods } from './utils'
 
@@ -26,6 +27,13 @@ export async function formatResult(
                 ;(cardData as any).modsDisplay = mods.displayString
                 ;(cardData as any).rateDisplay =
                     mods.rate !== 1.0 ? `${mods.rate.toFixed(2)}x` : null
+            }
+            // Fetch beatmap owners from API for mapper line
+            if (cardData.beatmapId) {
+                const owners = await fetchBeatmapOwners(ctx, cardData.beatmapId)
+                if (owners && owners.length > 0) {
+                    cardData.mapperNames = owners
+                }
             }
             const image = await renderCard(ctx, cardData)
             if (image) return image

@@ -38,14 +38,22 @@ body { padding: 0; }
     display: block;
 }
 .title-bar__name {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 400;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.1;
-    margin-bottom: 8px;
+    line-height: 1.35;
+    margin-bottom: 6px;
+}
+.title-bar__song-title {
+    font-size: 18px;
+    font-weight: 400;
+}
+.title-bar__song-artist {
+    font-size: 15px;
+    font-weight: 400;
 }
 .title-bar__meta {
     display: flex;
@@ -96,13 +104,13 @@ body { padding: 0; }
     -moz-osx-font-smoothing: grayscale;
 }
 .title-bar__version {
-    font-weight: 600;
+    font-weight: 400;
     color: var(--text-primary);
-    font-size: 14px;
+    font-size: 13px;
 }
 .title-bar__mapper {
     color: var(--text-secondary);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 400;
 }
 .title-bar__mapper-name {
@@ -407,14 +415,14 @@ body { padding: 0; }
 <section class="card">
     <!-- Title Bar (score-beatmap) -->
     <div class="title-bar">
-        <div class="title-bar__name">{{titleBarName}}</div>
+        <div class="title-bar__name"><span class="title-bar__song-title">{{titleText}}</span> <span class="title-bar__song-artist">by {{artistText}}</span></div>
         <div class="title-bar__meta">
             <span class="mania-icon"></span>
             <span class="diff-badge" style="background:{{starColor}};color:{{badgeTextColor}}">
                 <span class="diff-badge__star"></span>{{starRating}}
             </span>
             <span class="title-bar__version">{{version}}</span>
-            <span class="title-bar__mapper">mapped by <span class="title-bar__mapper-name">{{creator}}</span></span>
+            <span class="title-bar__mapper">{{mapperHtml}}</span>
         </div>
     </div>
 
@@ -439,10 +447,6 @@ body { padding: 0; }
     <!-- Stats Section (score-stats) -->
     <div class="stats-section">
         <div class="stats-meta">
-            <div class="stat-chip">
-                <span class="stat-chip__label">Keys</span>
-                <span class="stat-chip__value">{{keyCount}}K</span>
-            </div>
             <div class="stat-chip">
                 <span class="stat-chip__label">Type</span>
                 <span class="stat-chip__value" style="{{modeTagValueStyle}}">{{modeTag}}</span>

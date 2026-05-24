@@ -36,6 +36,10 @@ export interface CardRenderData {
     version: string
     keyCount: number
     beatmapsetId?: string
+    beatmapId?: string
+
+    // Mapper line info (from API)
+    mapperNames?: string[]  // If multiple: guest difficulty by X, Y, Z
 
     // Analysis results
     starRating: number
@@ -462,8 +466,18 @@ function buildHtml(data: CardRenderData): string {
         ? `<img class="main-panel__cover" src="${coverUrl}" alt="" />`
         : ''
 
-    // Title bar name: "artist - title"
-    const titleBarName = `${data.artist} - ${data.title}`
+    // Title bar name: "Title by Artist" (osu! style)
+    const titleBarName = `${data.title} by ${data.artist}`
+
+    // Mapper line: "guest difficulty by X, Y, Z" or "mapped by Creator"
+    let mapperHtml: string
+    if (data.mapperNames && data.mapperNames.length > 1) {
+        const names = data.mapperNames.map(n => `<span class="title-bar__mapper-name">${escapeHtml(n)}</span>`)
+        mapperHtml = `guest difficulty by ${names.join(', ')}`
+    } else {
+        const name = data.mapperNames?.[0] || data.creator || 'Unknown'
+        mapperHtml = `mapped by <span class="title-bar__mapper-name">${escapeHtml(name)}</span>`
+    }
 
     // Build body content
     let patternHtml = ''
@@ -489,12 +503,13 @@ function buildHtml(data: CardRenderData): string {
     // Replace placeholders
     return template
         .replace(/\{\{fontCss\}\}/g, fontCss)
-        .replace('{{titleBarName}}', escapeHtml(titleBarName))
+        .replace('{{titleText}}', escapeHtml(data.title))
+        .replace('{{artistText}}', escapeHtml(data.artist))
         .replace('{{starColor}}', starColor)
         .replace('{{badgeTextColor}}', badgeTextColor)
         .replace(/\{\{starRating\}\}/g, data.starRating.toFixed(2))
-        .replace('{{version}}', escapeHtml(data.version || '-'))
-        .replace('{{creator}}', escapeHtml(data.creator || 'Unknown'))
+        .replace('{{version}}', escapeHtml(`[${data.keyCount}K] ${data.version || '-'}`))
+        .replace('{{mapperHtml}}', mapperHtml)
         .replace('{{coverImgTag}}', coverImgTag)
         .replace('{{difficultyTextRc}}', escapeHtml(data.difficultyTextRc || data.difficultyText))
         .replace('{{difficultyLnHtml}}', data.difficultyTextLn
@@ -504,7 +519,6 @@ function buildHtml(data: CardRenderData): string {
         .replace('{{modeTagValueStyle}}', modeTagValueStyle(data.modeTag))
         .replace('{{modsHtml}}', modsHtml)
         .replace('{{flagsHtml}}', flagsHtml)
-        .replace('{{keyCount}}', String(data.keyCount))
         .replace('{{lnPercent}}', (data.lnPercent * 100).toFixed(1))
         .replace('{{bpmChipHtml}}', '')  // BPM not currently available in analysis
         .replace('{{ettOverallHtml}}', ettOverallHtml)
@@ -573,6 +587,7 @@ export function buildCardData(
     const version = meta['Version'] || ''
     const creator = meta['Creator'] || ''
     const beatmapsetId = meta['BeatmapSetID'] || undefined
+    const beatmapId = meta['BeatmapID'] || undefined
 
     let starRating = 0
     let difficultyText = '-'
@@ -653,6 +668,7 @@ export function buildCardData(
         version,
         keyCount: result.keycount,
         beatmapsetId,
+        beatmapId,
         starRating,
         lnPercent: result.lnRatio,
         modeTag: result.modeTag,

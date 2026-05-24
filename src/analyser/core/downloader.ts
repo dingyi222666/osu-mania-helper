@@ -232,3 +232,30 @@ function buildSourceList(
         url: m.url(beatmapId),
     }))
 }
+
+// ─── Beatmap Owners Fetch ───────────────────────────────────────────────────
+
+/**
+ * Fetches the owners (mappers) of a specific beatmap difficulty from API mirrors.
+ * Returns an array of usernames, or null if the fetch fails.
+ * Uses catboy.best which provides the `owners` field with username info.
+ */
+export async function fetchBeatmapOwners(
+    ctx: Context,
+    beatmapId: number | string,
+): Promise<string[] | null> {
+    try {
+        const data = await ctx.http.get<any>(`https://catboy.best/api/v2/b/${beatmapId}`, {
+            timeout: 5000,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            },
+        })
+        if (data?.owners && Array.isArray(data.owners) && data.owners.length > 0) {
+            return data.owners.map((o: any) => String(o.username)).filter((n: string) => n)
+        }
+    } catch (e) {
+        ctx.logger.debug('fetchBeatmapOwners failed: %s', e instanceof Error ? e.message : String(e))
+    }
+    return null
+}
