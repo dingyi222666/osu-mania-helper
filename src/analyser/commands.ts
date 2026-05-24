@@ -72,19 +72,14 @@ export function apply(ctx: Context, config: AnalyserConfig, cache: BeatmapCache)
                 } else {
                     // Treat as a direct URL to a .osu file
                     try {
-                        const response = await ctx.http(input, {
+                        osuContent = await ctx.http.get(input, {
                             responseType: 'text',
-                            method: 'get',
                             timeout: 10000,
                             headers: {
                                 'User-Agent':
                                     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                             }
                         })
-                        osuContent =
-                            typeof response.data === 'string'
-                                ? response.data
-                                : String(response.data)
                     } catch {
                         return session.text('.failed', ['无法从 URL 获取文件'])
                     }
@@ -366,18 +361,13 @@ async function readOsuFile(
         const url = (el.attrs.url ?? el.attrs.src) as string
         if (!url) continue
         try {
-            const response = await ctx.http(url, {
+            const text = await ctx.http.get(url, {
                 responseType: 'text',
-                method: 'get',
                 headers: {
                     'User-Agent':
                         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                 }
             })
-            const text =
-                typeof response.data === 'string'
-                    ? response.data
-                    : String(response.data)
             if (text.includes('osu file format')) return text
         } catch {
             continue

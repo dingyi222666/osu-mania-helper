@@ -85,16 +85,13 @@ export async function downloadBeatmap(
 
     for (const source of sources) {
         try {
-            const response = await ctx.http(source.url, {
-                method: 'GET',
+            const text = await ctx.http.get(source.url, {
                 responseType: 'text',
                 timeout: 5000,
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 },
             })
-
-            const text = typeof response.data === 'string' ? response.data : String(response.data)
 
             // Validate that the response is actually an .osu file
             if (text.trimStart().startsWith('osu file format')) {
