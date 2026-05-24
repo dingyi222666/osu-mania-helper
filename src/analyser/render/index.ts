@@ -316,11 +316,12 @@ function buildRadarChartSvg(
     const n = data.length
     if (n < 3) return ''
 
-    const cx = 120
+    const cx = 130
     const cy = 120
     const radius = 85
     const labelRadius = radius + 18
-    const size = 240
+    const viewW = 280
+    const viewH = 250
 
     // Angle for each axis (start from top, go clockwise)
     const angleStep = (2 * Math.PI) / n
@@ -373,12 +374,12 @@ function buildRadarChartSvg(
         let dy = '0.35em'
         if (y < cy - 30) dy = '0.8em'
         else if (y > cy + 30) dy = '0em'
-        const valueStr = d.value > 0 ? d.value.toFixed(2) : ''
+        const valueStr = d.value > 0 ? `${d.value.toFixed(1)}%` : ''
         const valueLine = valueStr ? `<tspan x="${x.toFixed(1)}" dy="11" font-size="8" fill="rgba(255,255,255,0.55)">${valueStr}</tspan>` : ''
         return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="400" text-anchor="${anchor}" dy="${dy}"><tspan>${escapeHtml(d.label)}</tspan>${valueLine}</text>`
     }).join('\n    ')
 
-    return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+    return `<svg viewBox="0 0 ${viewW} ${viewH}" width="${viewW}" height="${viewH}" xmlns="http://www.w3.org/2000/svg">
     ${gridPolygons}
     ${axisLines}
     <polygon points="${dataPoints}" fill="${fillRgba}" stroke="${strokeRgba}" stroke-width="1.5"/>
@@ -399,16 +400,18 @@ function buildPatternRadarSvg(patterns: PatternCluster[], fillColor: string): st
         }
     }
 
-    const maxAmount = Math.max(...topItems.map(p => p.amount), 1)
+    // Calculate total for percentage conversion
+    const totalAmount = patterns.reduce((sum, p) => sum + p.amount, 0) || 1
 
     const data = topItems.map(p => ({
         label: p.name,
-        value: p.amount,
+        value: (p.amount / totalAmount) * 100, // percentage
     }))
 
+    // Max scale is 100% (the radar shows 0-100% range)
     return `<div class="radar-chart">
         <span class="radar-chart__title">Patterns</span>
-        ${buildRadarChartSvg(data, maxAmount, fillColor, fillColor)}
+        ${buildRadarChartSvg(data, 100, fillColor, fillColor)}
     </div>`
 }
 
@@ -435,8 +438,9 @@ function buildEtternaRadarSvg(msd: EtternaMSD, fillColor: string): string {
 
 /**
  * Builds a difficulty-over-time SVG graph.
+ * Uses position-based star rating colors with gradient transitions.
  * @param graphData The time/value series from the estimator
- * @param lineColor CSS color for the graph line
+ * @param lineColor CSS color fallback (unused now, kept for API compat)
  */
 function buildDiffGraphSvg(graphData: GraphData, lineColor: string): string {
     const { times, values } = graphData
@@ -504,10 +508,21 @@ function buildDiffGraphSvg(graphData: GraphData, lineColor: string): string {
         `${(padX + plotW).toFixed(1)},${(padTop + plotH).toFixed(1)}`
     ]
 
-    // Parse line color for fill
-    const rgb = hexToRgb(lineColor)
-    const fillColor = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.15)`
-    const strokeColor = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.9)`
+    // Build position-based gradient stops from sampled difficulty values
+    const numStops = Math.min(sampledTimes.length, 30) // cap gradient stops for SVG size
+    const stopStep = Math.max(1, Math.floor(sampledTimes.length / numStops))
+    const gradientStops: string[] = []
+    for (let i = 0; i < sampledTimes.length; i += stopStep) {
+        const offset = ((sampledTimes[i] - minTime) / timeSpan) * 100
+        const color = starColorFor(sampledValues[i])
+        gradientStops.push(`<stop offset="${offset.toFixed(1)}%" stop-color="${color}"/>`)
+    }
+    // Always include last point
+    const lastColor = starColorFor(sampledValues[sampledValues.length - 1])
+    gradientStops.push(`<stop offset="100%" stop-color="${lastColor}"/>`)
+
+    const gradId = 'diffGrad'
+    const gradIdFill = 'diffGradFill'
 
     // Subtle grid lines (3 horizontal)
     const gridLines: string[] = []
@@ -517,9 +532,17 @@ function buildDiffGraphSvg(graphData: GraphData, lineColor: string): string {
     }
 
     return `<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+    <defs>
+        <linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="0%">
+            ${gradientStops.join('\n            ')}
+        </linearGradient>
+        <linearGradient id="${gradIdFill}" x1="0%" y1="0%" x2="100%" y2="0%">
+            ${gradientStops.join('\n            ')}
+        </linearGradient>
+    </defs>
     ${gridLines.join('\n    ')}
-    <polygon points="${fillPoints.join(' ')}" fill="${fillColor}"/>
-    <polyline points="${points.join(' ')}" fill="none" stroke="${strokeColor}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <polygon points="${fillPoints.join(' ')}" fill="url(#${gradIdFill})" fill-opacity="0.15"/>
+    <polyline points="${points.join(' ')}" fill="none" stroke="url(#${gradId})" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
 </svg>`
 }
 
@@ -851,19 +874,26 @@ export function buildCardData(
     }
 
     // Determine body mode
-    // In 'auto' mode, prefer etterna MSD (more meaningful difficulty info) over raw pattern counts
+    // In 'auto' mode, follow original project logic:
+    //   RC → Etterna, everything else (LN/HB/Mix) → Pattern
     let bodyMode: 'pattern' | 'etterna' | 'graph' | 'none' = 'none'
     if (config.cardBody === 'graph') {
         bodyMode = 'graph'
     } else if (config.cardBody === 'auto') {
-        // In auto mode, show graph if available, otherwise fall back to etterna/pattern
-        const graph = result.estimator?.graph as GraphData | null | undefined
-        if (graph && graph.times?.length >= 2) {
-            bodyMode = 'graph'
-        } else if (result.etternaResult?.values) {
-            bodyMode = 'etterna'
-        } else if (result.patternReport?.Clusters && result.patternReport.Clusters.length > 0) {
-            bodyMode = 'pattern'
+        if (result.modeTag === 'RC') {
+            // RC maps show Etterna MSD if available, otherwise fall back to pattern
+            if (result.etternaResult?.values) {
+                bodyMode = 'etterna'
+            } else if (result.patternReport?.Clusters && result.patternReport.Clusters.length > 0) {
+                bodyMode = 'pattern'
+            }
+        } else {
+            // LN/HB/Mix maps show pattern if available, otherwise fall back to etterna
+            if (result.patternReport?.Clusters && result.patternReport.Clusters.length > 0) {
+                bodyMode = 'pattern'
+            } else if (result.etternaResult?.values) {
+                bodyMode = 'etterna'
+            }
         }
     } else if (config.cardBody === 'pattern') {
         bodyMode = 'pattern'
