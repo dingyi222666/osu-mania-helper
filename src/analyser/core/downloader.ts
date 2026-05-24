@@ -85,22 +85,39 @@ export async function downloadBeatmap(
 
     for (const source of sources) {
         try {
-            const text = await ctx.http.get(source.url, {
+            ctx.logger.debug('Downloading from: %s', source.url)
+
+            const text = await ctx.http.get<string>(source.url, {
                 responseType: 'text',
-                timeout: 5000,
+                timeout: 8000,
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 },
             })
 
+            ctx.logger.debug(
+                'Response from %s - type: %s, length: %d',
+                source.name,
+                typeof text,
+                text?.length ?? 0,
+            )
+
+            // Safety: ensure we actually got a string back
+            if (typeof text !== 'string' || !text) {
+                errors.push(`${source.name}: response is not a string (got ${typeof text})`)
+                continue
+            }
+
             // Validate that the response is actually an .osu file
             if (text.trimStart().startsWith('osu file format')) {
+                ctx.logger.debug('Valid .osu file from %s (%d bytes)', source.name, text.length)
                 return text
             }
 
-            errors.push(`${source.name}: response is not a valid .osu file`)
+            errors.push(`${source.name}: response is not a valid .osu file (starts with: "${text.slice(0, 40)}...")`)
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error)
+            ctx.logger.debug('Download failed from %s: %s', source.name, message)
             errors.push(`${source.name}: ${message}`)
         }
     }

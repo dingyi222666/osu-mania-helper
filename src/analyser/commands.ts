@@ -1,14 +1,14 @@
-import { Context, h, Session } from 'koishi'
+import { Context } from 'koishi'
 import { AnalyserConfig } from './config'
 import {
     analyzeMap,
     type AnalysisOptions,
-    type AnalysisResult,
     type EstimatorAlgorithm
 } from './core/analysis'
-import { renderCard, buildCardData } from './render'
 import { downloadBeatmap, parseBeatmapId } from './core/downloader'
 import { BeatmapCache } from './core/cache'
+import { sendTemporary, parseMods, readOsuFile, type ParsedMods } from './utils'
+import { formatResult } from './formatters'
 
 const promptTimeout = 1000 * 60
 
@@ -66,7 +66,8 @@ export function apply(ctx: Context, config: AnalyserConfig, cache: BeatmapCache)
                                 error instanceof Error
                                     ? error.message
                                     : String(error)
-                            return session.text('.download-failed', [message])
+                            await sendTemporary(ctx, session, session.text('.download-failed', [message]))
+                            return
                         }
                     }
                 } else {
@@ -81,7 +82,8 @@ export function apply(ctx: Context, config: AnalyserConfig, cache: BeatmapCache)
                             }
                         })
                     } catch {
-                        return session.text('.failed', ['无法从 URL 获取文件'])
+                        await sendTemporary(ctx, session, session.text('.failed', ['无法从 URL 获取文件']))
+                        return
                     }
                 }
             }
@@ -93,25 +95,32 @@ export function apply(ctx: Context, config: AnalyserConfig, cache: BeatmapCache)
 
             // 3. Prompt user for file
             if (!osuContent) {
-                await session.send(session.text('.prompt-file'))
+                await sendTemporary(ctx, session, session.text('.prompt-file'))
                 const prompted = await session.prompt(
                     async (next) => readOsuFile(next, ctx),
                     { timeout: promptTimeout }
                 )
-                if (prompted === undefined) return session.text('.timeout')
+                if (prompted === undefined) {
+                    await sendTemporary(ctx, session, session.text('.timeout'))
+                    return
+                }
                 osuContent = prompted
             }
 
-            if (!osuContent) return session.text('.no-file')
+            if (!osuContent) {
+                await sendTemporary(ctx, session, session.text('.no-file'))
+                return
+            }
 
             // File size check
             const fileSizeBytes = Buffer.byteLength(osuContent, 'utf-8')
             const maxBytes = config.maxFileSizeMb * 1024 * 1024
             if (fileSizeBytes > maxBytes) {
-                return session.text('.failed', [`文件过大（${(fileSizeBytes / 1024 / 1024).toFixed(1)}MB），最大允许 ${config.maxFileSizeMb}MB`])
+                await sendTemporary(ctx, session, session.text('.failed', [`文件过大（${(fileSizeBytes / 1024 / 1024).toFixed(1)}MB），最大允许 ${config.maxFileSizeMb}MB`]))
+                return
             }
 
-            await session.send(session.text('.analysing'))
+            await sendTemporary(ctx, session, session.text('.analysing'))
 
             // Map config algorithm to AnalysisOptions
             const algorithmMap: Record<string, EstimatorAlgorithm> = {
@@ -167,219 +176,8 @@ export function apply(ctx: Context, config: AnalyserConfig, cache: BeatmapCache)
                 const message =
                     error instanceof Error ? error.message : String(error)
                 ctx.logger.warn(error)
-                return session.text('.failed', [message])
+                await sendTemporary(ctx, session, session.text('.failed', [message]))
+                return
             }
         })
-}
-
-// ─── Mod Parsing ────────────────────────────────────────────────────────────
-
-/** Known mod acronyms (2-char codes) */
-const KNOWN_MODS = [
-    'DT',
-    'NC',
-    'HT',
-    'DC',
-    'HR',
-    'EZ',
-    'FL',
-    'HD',
-    'FI',
-    'NF',
-    'SD',
-    'PF',
-    'MR'
-] as const
-type ModCode = (typeof KNOWN_MODS)[number]
-
-interface ParsedMods {
-    codes: ModCode[]
-    rate: number
-    displayString: string
-}
-
-/**
- * Parses a mod string like "DTHR" or "dt hr" into individual mod codes.
- * Case-insensitive, ignores spaces/commas.
- */
-function parseMods(input: string): ParsedMods {
-    const normalized = input.toUpperCase().replace(/[\s,]+/g, '')
-    const codes: ModCode[] = []
-
-    let i = 0
-    while (i < normalized.length) {
-        let matched = false
-        for (const mod of KNOWN_MODS) {
-            if (normalized.startsWith(mod, i)) {
-                if (!codes.includes(mod)) codes.push(mod)
-                i += mod.length
-                matched = true
-                break
-            }
-        }
-        if (!matched) i++
-    }
-
-    // Determine rate multiplier
-    let rate = 1.0
-    if (codes.includes('DT') || codes.includes('NC')) {
-        rate = 1.5
-    } else if (codes.includes('HT') || codes.includes('DC')) {
-        rate = 0.75
-    }
-
-    const displayString = codes.length > 0 ? codes.join('') : 'NM'
-
-    return { codes, rate, displayString }
-}
-
-async function formatResult(
-    ctx: Context,
-    result: AnalysisResult,
-    mixedOverride: unknown,
-    config: AnalyserConfig,
-    mods: ParsedMods | null
-): Promise<h | string> {
-    const mixed = mixedOverride as { estDiff?: string; star?: number } | null
-
-    // Try card rendering with puppeteer
-    if (ctx.puppeteer) {
-        try {
-            const cardData = buildCardData(result, mixed, config)
-            // Inject mod info into card data if mods are active
-            if (mods && mods.codes.length > 0) {
-                ;(cardData as any).modsDisplay = mods.displayString
-                ;(cardData as any).rateDisplay =
-                    mods.rate !== 1.0 ? `${mods.rate.toFixed(2)}x` : null
-            }
-            const image = await renderCard(ctx, cardData)
-            if (image) return image
-        } catch (error) {
-            ctx.logger.warn('Card render failed, falling back to text:', error)
-        }
-    }
-
-    // Fallback to text format
-    return formatTextResult(result, mixed, config, mods)
-}
-
-function formatTextResult(
-    result: AnalysisResult,
-    mixedOverride: { estDiff?: string; star?: number } | null,
-    config: AnalyserConfig,
-    mods: ParsedMods | null
-): string {
-    const meta = result.metadata
-    const title = meta['Title'] || meta['TitleUnicode'] || 'Unknown'
-    const artist = meta['Artist'] || meta['ArtistUnicode'] || 'Unknown'
-    const version = meta['Version'] || ''
-    const creator = meta['Creator'] || ''
-
-    const lines: string[] = []
-    lines.push(`🎵 ${artist} - ${title}`)
-    if (version) lines.push(`   [${version}] by ${creator}`)
-    lines.push(``)
-    lines.push(
-        `Keys: ${result.keycount}K | Mode: ${result.modeTag} | LN: ${(result.lnRatio * 100).toFixed(1)}%`
-    )
-
-    // Mods info
-    if (mods && mods.codes.length > 0) {
-        let modLine = `Mods: ${mods.displayString}`
-        if (mods.rate !== 1.0) modLine += ` (${mods.rate.toFixed(2)}x)`
-        lines.push(modLine)
-    }
-
-    // Estimator result
-    if (mixedOverride && 'estDiff' in mixedOverride) {
-        lines.push(
-            `Difficulty: ${mixedOverride.estDiff ?? '-'} (★${mixedOverride.star?.toFixed(2) ?? '-'})`
-        )
-        lines.push(`Algorithm: Mixed`)
-    } else if (result.estimator) {
-        lines.push(
-            `Difficulty: ${result.estimator.estDiff} (★${result.estimator.star.toFixed(2)})`
-        )
-        lines.push(`Algorithm: ${result.actualEstimatorAlgorithm}`)
-    }
-
-    // Flags
-    const flags: string[] = []
-    if (result.isVibro) flags.push('Vibro')
-    if (result.isSv) flags.push('SV')
-    if (flags.length > 0) lines.push(`Flags: ${flags.join(', ')}`)
-
-    // Etterna MSD
-    if (result.etternaResult?.values) {
-        const vals = result.etternaResult.values
-        const msdParts: string[] = []
-        if (vals.Overall)
-            msdParts.push(`Overall: ${Number(vals.Overall).toFixed(2)}`)
-        if (vals.Stream)
-            msdParts.push(`Stream: ${Number(vals.Stream).toFixed(2)}`)
-        if (vals.Jumpstream)
-            msdParts.push(`JS: ${Number(vals.Jumpstream).toFixed(2)}`)
-        if (vals.Handstream)
-            msdParts.push(`HS: ${Number(vals.Handstream).toFixed(2)}`)
-        if (vals.JackSpeed)
-            msdParts.push(`Jack: ${Number(vals.JackSpeed).toFixed(2)}`)
-        if (vals.Chordjack)
-            msdParts.push(`CJ: ${Number(vals.Chordjack).toFixed(2)}`)
-        if (vals.Technical)
-            msdParts.push(`Tech: ${Number(vals.Technical).toFixed(2)}`)
-        if (msdParts.length > 0) {
-            lines.push(``)
-            lines.push(`Etterna MSD (v${config.etternaVersion}):`)
-            lines.push(`  ${msdParts.join(' | ')}`)
-        }
-    }
-
-    // Errors
-    if (result.errors.length > 0) {
-        lines.push(``)
-        lines.push(`⚠️ ${result.errors.join('; ')}`)
-    }
-
-    return lines.join('\n')
-}
-
-async function readOsuFile(
-    session: Session,
-    ctx: Context
-): Promise<string | null> {
-    // Check for file elements in message
-    const fileElements = [
-        ...h.select(session.elements, 'file'),
-        ...h.select(session.elements, 'audio'),
-        ...h.select(
-            session.quote?.elements ?? h.parse(session.quote?.content ?? ''),
-            'file'
-        )
-    ]
-
-    for (const el of fileElements) {
-        const url = (el.attrs.url ?? el.attrs.src) as string
-        if (!url) continue
-        try {
-            const text = await ctx.http.get(url, {
-                responseType: 'text',
-                headers: {
-                    'User-Agent':
-                        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                }
-            })
-            if (text.includes('osu file format')) return text
-        } catch {
-            continue
-        }
-    }
-
-    // Also check for plain text that looks like an osu file (some platforms inline small files)
-    const textElements = h.select(session.elements, 'text')
-    for (const el of textElements) {
-        const content = el.attrs.content as string
-        if (content && content.includes('osu file format')) return content
-    }
-
-    return null
 }
