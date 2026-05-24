@@ -15,4 +15,4 @@ commands:
             no-file: 没有找到 .osu 文件。
             analysing: 正在分析谱面...
             failed: 分析失败：{0}
-            download-failed: 谱面下载失败：{0}
+            download-failed: 找不到该谱面，请检查 ID 是否正确。

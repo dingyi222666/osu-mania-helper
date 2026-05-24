@@ -62,11 +62,8 @@ export function apply(ctx: Context, config: AnalyserConfig, cache: BeatmapCache)
                             // Save to cache
                             cache.set(resolvedBeatmapId, osuContent)
                         } catch (error) {
-                            const message =
-                                error instanceof Error
-                                    ? error.message
-                                    : String(error)
-                            await sendTemporary(ctx, session, session.text('.download-failed', [message]))
+                            ctx.logger.debug('Download failed: %s', error instanceof Error ? error.message : String(error))
+                            await sendTemporary(ctx, session, session.text('.download-failed'))
                             return
                         }
                     }

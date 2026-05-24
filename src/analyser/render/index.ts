@@ -467,6 +467,20 @@ export async function renderCard(ctx: Context, data: CardRenderData): Promise<h 
         await page.setViewport({ width: 740, height: 800 })
         await page.setContent(html, { waitUntil: 'domcontentloaded' })
         await page.evaluate(() => document.fonts.ready)
+        // Wait for images to load (with 5s timeout so it doesn't hang forever)
+        await page.evaluate(() => {
+            return Promise.race([
+                Promise.all(
+                    Array.from(document.images).map(img =>
+                        img.complete ? Promise.resolve() : new Promise(resolve => {
+                            img.onload = resolve
+                            img.onerror = resolve
+                        })
+                    )
+                ),
+                new Promise(resolve => setTimeout(resolve, 5000))
+            ])
+        })
 
         const card = await page.$('.card')
         if (!card) {
