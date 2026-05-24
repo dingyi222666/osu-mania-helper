@@ -22,6 +22,10 @@ export async function formatResult(
     if (ctx.puppeteer) {
         try {
             const cardData = buildCardData(result, mixed, config)
+            // Apply rate multiplier to BPM
+            if (mods && mods.rate !== 1.0) {
+                cardData.bpm = Math.round(cardData.bpm * mods.rate)
+            }
             // Inject mod info into card data if mods are active
             if (mods && mods.codes.length > 0) {
                 cardData.modsDisplay = mods.codes.join('')
