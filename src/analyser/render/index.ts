@@ -256,11 +256,14 @@ function buildSpectrumGradient(cutoff: number): string {
 
 /**
  * Computes a per-bar inline gradient for Etterna MSD bars.
- * Maps MSD value (0-40) to the spectrum cutoff (0-0.77 range).
+ * Maps MSD value (0-30) to the spectrum cutoff (0-0.77 range).
+ * Using 30 as the max compresses the color range so higher MSD values
+ * (20-26+) appear darker/more intense, matching Etterna's feel.
  */
 function barGradientFor(msdValue: number): string {
-    // MSD 0-40 maps to spectrum position 0-0.77 (full domain range)
-    const cutoff = Math.max(0.01, Math.min(msdValue / 40, 1)) * 0.77
+    // MSD 0-30 maps to spectrum position 0-0.77 (full domain range)
+    // Values above 30 clamp to the darkest end of the spectrum
+    const cutoff = Math.max(0.01, Math.min(msdValue / 30, 1)) * 0.77
     return buildSpectrumGradient(cutoff)
 }
 
