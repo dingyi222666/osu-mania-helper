@@ -8,16 +8,18 @@ import {
 } from './core/analysis'
 import { renderCard, buildCardData } from './render'
 import { downloadBeatmap, parseBeatmapId } from './core/downloader'
+import { AnalysisCache } from './core/cache'
 
 const promptTimeout = 1000 * 60
 
 // ─── Command Registration ───────────────────────────────────────────────────
 
-export function apply(ctx: Context, config: AnalyserConfig) {
+export function apply(ctx: Context, config: AnalyserConfig, cache: AnalysisCache) {
     ctx.command('mania-analyse [input:text]', { authority: 1 })
         .alias('ma')
         .action(async ({ session }, input) => {
             let osuContent: string | null = null
+            let resolvedBeatmapId: string | null = null
 
             // Parse +mods from input (e.g. "4812662 +dthr")
             let mods: ParsedMods | null = null
@@ -34,6 +36,14 @@ export function apply(ctx: Context, config: AnalyserConfig) {
             if (input) {
                 const beatmapId = parseBeatmapId(input)
                 if (beatmapId) {
+                    resolvedBeatmapId = String(beatmapId)
+                    // Check cache first
+                    const modsKey = mods?.displayString ?? 'NM'
+                    const cached = cache.get(resolvedBeatmapId, modsKey)
+                    if (cached) {
+                        return await formatResult(ctx, cached.result, null, config, mods)
+                    }
+
                     try {
                         osuContent = await downloadBeatmap(
                             ctx,
@@ -89,6 +99,13 @@ export function apply(ctx: Context, config: AnalyserConfig) {
 
             if (!osuContent) return session.text('.no-file')
 
+            // File size check
+            const fileSizeBytes = Buffer.byteLength(osuContent, 'utf-8')
+            const maxBytes = config.maxFileSizeMb * 1024 * 1024
+            if (fileSizeBytes > maxBytes) {
+                return session.text('.failed', [`文件过大（${(fileSizeBytes / 1024 / 1024).toFixed(1)}MB），最大允许 ${config.maxFileSizeMb}MB`])
+            }
+
             await session.send(session.text('.analysing'))
 
             // Map config algorithm to AnalysisOptions
@@ -122,6 +139,10 @@ export function apply(ctx: Context, config: AnalyserConfig) {
                         ...options_,
                         estimatorAlgorithm: 'Sunny' // base, will be overridden by mixed
                     })
+                    // Store in cache
+                    if (resolvedBeatmapId) {
+                        cache.set(resolvedBeatmapId, mods?.displayString ?? 'NM', result)
+                    }
                     return await formatResult(
                         ctx,
                         result,
@@ -141,6 +162,10 @@ export function apply(ctx: Context, config: AnalyserConfig) {
 
             try {
                 const result = await analyzeMap(osuContent, options_)
+                // Store in cache
+                if (resolvedBeatmapId) {
+                    cache.set(resolvedBeatmapId, mods?.displayString ?? 'NM', result)
+                }
                 return await formatResult(ctx, result, null, config, mods)
             } catch (error) {
                 const message =
