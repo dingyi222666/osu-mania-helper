@@ -4,6 +4,8 @@
 - **Branch:** main
 - **Commit:** `fddbad284dde6eac8be071c51dbca53c02c68af3`
 - **Port date:** 2025-05-24
+- **Upstream license:** MIT (Copyright (c) 2026 Leo_Black)
+- **License file:** [`src/analyser/core/LICENSE`](core/LICENSE)
 
 ---
 
