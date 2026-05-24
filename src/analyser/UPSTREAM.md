@@ -61,7 +61,7 @@
 
 ### Per-file changes
 
-- **`analysis.ts`**: Removed HTTP fetch, DOM manipulation, socket references, appContext. Converted to pure function.
+- **`analysis.ts`**: Removed HTTP fetch, DOM manipulation, socket references, appContext. Converted to pure function. Added `bpm` field to `AnalysisResult` with `calculatePrimaryBpm()` helper (duration-weighted primary BPM from uninherited timing points). Extended `parseMetadataFromBeatmap` to also return `timingPoints`.
 - **`mixedEstimator.ts`**: Removed Companella estimator path entirely.
 - **`ett/versions/index.ts`**: Rewrote WASM loading to use `require()` + `fs.readFileSync` for Node.js compatibility.
 - **WASM glue files** (`resources/analyser/ett/*.cjs`): Renamed .js→.cjs, replaced `import.meta.url` with CJS equivalent, replaced `export default` with `module.exports`.

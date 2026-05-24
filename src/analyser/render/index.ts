@@ -49,6 +49,7 @@ export interface CardRenderData {
     // Analysis results
     starRating: number
     lnPercent: number
+    bpm: number
     modeTag: string  // RC/LN/HB/Mix
     estimatorName: string
     difficultyText: string
@@ -751,10 +752,12 @@ function buildHtml(data: CardRenderData): string {
         .replace('{{modsHtml}}', modsHtml)
         .replace('{{flagsHtml}}', flagsHtml)
         .replace('{{lnPercent}}', (data.lnPercent * 100).toFixed(1))
-        .replace('{{bpmChipHtml}}', '')  // BPM not currently available in analysis
+        .replace('{{bpmChipHtml}}', data.bpm > 0
+            ? `<div class="stat-chip"><span class="stat-chip__label">BPM</span><span class="stat-chip__value">${data.bpm}</span></div>`
+            : '')
         .replace('{{ettOverallHtml}}', ettOverallHtml)
         .replace('{{radarContent}}', radarHtml)
-        .replace('{{radarDisplay}}', (data.bodyMode === 'pattern' || data.bodyMode === 'etterna' || data.bodyMode === 'graph') ? 'flex' : 'none')
+        .replace('{{radarDisplay}}', data.bodyMode !== 'none' && radarHtml ? 'flex' : 'none')
 }
 
 // ─── Puppeteer rendering ────────────────────────────────────────────────────
@@ -915,6 +918,7 @@ export function buildCardData(
         beatmapId,
         starRating,
         lnPercent: result.lnRatio,
+        bpm: result.bpm,
         modeTag: result.modeTag,
         estimatorName,
         difficultyText,

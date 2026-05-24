@@ -93,6 +93,8 @@ export interface AnalysisResult {
     keycount: number
     /** LN ratio (0-1) */
     lnRatio: number
+    /** Primary BPM of the beatmap */
+    bpm: number
     /** Mode classification: RC, LN, or Mix */
     modeTag: ModeTag
     /** Whether the map is classified as vibro */
@@ -126,6 +128,7 @@ function parseMetadataFromBeatmap(osuText: string): {
     metadata: Record<string, string>
     lnRatio: number
     columnCount: number
+    timingPoints: [number, number][]
 } {
     const parser = new OsuFileParser(osuText)
     parser.process()
@@ -133,8 +136,51 @@ function parseMetadataFromBeatmap(osuText: string): {
     return {
         metadata: parsed.metaData || {},
         lnRatio: Number(parsed.lnRatio) || 0,
-        columnCount: Number(parsed.columnCount) || 0
+        columnCount: Number(parsed.columnCount) || 0,
+        timingPoints: parser.timingPoints
     }
+}
+
+/**
+ * Calculates the primary BPM of a beatmap from its uninherited timing points.
+ * Uses duration-weighted approach: the BPM that covers the most time wins.
+ */
+function calculatePrimaryBpm(timingPoints: [number, number][], noteStarts?: number[]): number {
+    if (!timingPoints.length) return 0
+
+    // If only one timing point, just return its BPM
+    if (timingPoints.length === 1) {
+        return Math.round(60000 / timingPoints[0][1])
+    }
+
+    // Calculate duration each timing point covers
+    // Use the last note time as the end boundary if available
+    const lastTime = noteStarts && noteStarts.length > 0
+        ? Math.max(...noteStarts)
+        : timingPoints[timingPoints.length - 1][0] + 60000 // fallback: 1 min after last tp
+
+    const bpmDurations = new Map<number, number>()
+
+    for (let i = 0; i < timingPoints.length; i++) {
+        const start = timingPoints[i][0]
+        const end = i + 1 < timingPoints.length ? timingPoints[i + 1][0] : lastTime
+        const duration = Math.max(0, end - start)
+        const bpm = Math.round(60000 / timingPoints[i][1])
+
+        bpmDurations.set(bpm, (bpmDurations.get(bpm) || 0) + duration)
+    }
+
+    // Find the BPM with the longest total duration
+    let primaryBpm = 0
+    let maxDuration = 0
+    for (const [bpm, duration] of bpmDurations) {
+        if (duration > maxDuration) {
+            maxDuration = duration
+            primaryBpm = bpm
+        }
+    }
+
+    return primaryBpm
 }
 
 // ─── Main orchestrator ───────────────────────────────────────────────────────
@@ -323,10 +369,14 @@ export async function analyzeMap(
         }
     }
 
+    // ─── BPM Calculation ─────────────────────────────────────────────────────
+    const bpm = calculatePrimaryBpm(parsedInfo.timingPoints)
+
     return {
         metadata: parsedInfo.metadata,
         keycount: parsedInfo.columnCount,
         lnRatio,
+        bpm,
         modeTag,
         isVibro: isVibro,
         isSv,
