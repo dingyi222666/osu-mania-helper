@@ -423,10 +423,11 @@ function buildEtternaRadarSvg(msd: EtternaMSD, fillColor: string): string {
         { label: 'Tech', value: msd.technical },
     ]
 
-    // Max scale = 30 (same as color scale)
+    const maxValue = 40
+
     return `<div class="radar-chart">
         <span class="radar-chart__title">Etterna MSD</span>
-        ${buildRadarChartSvg(data, 30, fillColor, fillColor)}
+        ${buildRadarChartSvg(data, maxValue, fillColor, fillColor)}
     </div>`
 }
 
@@ -694,13 +695,14 @@ function buildHtml(data: CardRenderData): string {
     const titleBarName = `${data.title} by ${data.artist}`
 
     // Mapper line: "guest difficulty by X, Y, Z" or "mapped by Creator"
+    // Rendered as inline text that flows naturally after the version name
     let mapperHtml: string
     if (data.mapperNames && data.mapperNames.length > 1) {
         const names = data.mapperNames.map(n => `<span class="title-bar__mapper-name">${escapeHtml(n)}</span>`)
-        mapperHtml = `guest difficulty by ${names.join(', ')}`
+        mapperHtml = `<span class="title-bar__mapper">guest difficulty by ${names.join(', ')}</span>`
     } else {
         const name = data.mapperNames?.[0] || data.creator || 'Unknown'
-        mapperHtml = `mapped by <span class="title-bar__mapper-name">${escapeHtml(name)}</span>`
+        mapperHtml = `<span class="title-bar__mapper">mapped by <span class="title-bar__mapper-name">${escapeHtml(name)}</span></span>`
     }
 
     // Build body content - radar charts or graph

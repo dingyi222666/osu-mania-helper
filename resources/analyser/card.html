@@ -57,12 +57,12 @@
             }
             .title-bar__meta {
                 display: flex;
+                flex-wrap: nowrap;
                 align-items: flex-start;
                 gap: 8px;
-                flex-wrap: wrap;
                 font-size: 14px;
                 color: var(--text-primary);
-                line-height: 1.25;
+                line-height: 1.4;
             }
             .diff-badge {
                 display: inline-flex;
@@ -109,15 +109,22 @@
                 font-size: 13px;
             }
             .title-bar__mapper {
-                display: block;
                 color: var(--text-secondary);
                 font-size: 11px;
                 font-weight: 400;
-                margin-top: 4px;
+                margin-left: 4px;
             }
             .title-bar__mapper-name {
                 color: var(--text-mapper);
                 font-weight: 400;
+            }
+            .title-bar__version-mapper {
+                font-weight: 400;
+                color: var(--text-primary);
+                font-size: 13px;
+                flex: 1;
+                min-width: 0;
+                line-height: 1.4;
             }
 
             /* ─── Main Panel (score-info) ─── */
@@ -398,9 +405,8 @@
                         <span class="diff-badge__star"></span>
                         {{starRating}}
                     </span>
-                    <span class="title-bar__version">{{version}}</span>
+                    <span class="title-bar__version-mapper">{{version}} {{mapperHtml}}</span>
                 </div>
-                <div class="title-bar__mapper">{{mapperHtml}}</div>
             </div>
 
             <!-- Main Panel (score-info) -->
