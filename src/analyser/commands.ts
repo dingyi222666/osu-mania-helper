@@ -23,14 +23,36 @@ export function apply(ctx: Context, config: AnalyserConfig, cache: BeatmapCache)
             let resolvedBeatmapId: string | null = null
             const forceRefresh = options?.refresh ?? false
 
-            // Parse +mods from input (e.g. "4812662 +dthr")
+            // Parse +mods from input (e.g. "4812662 +dthr" or "+dt1.1" or "+dt 1.1")
             let mods: ParsedMods | null = null
             if (input) {
                 const tokens = input.trim().split(/\s+/)
-                const modToken = tokens.find((t) => t.startsWith('+') && t.length > 1)
-                if (modToken) {
-                    mods = parseMods(modToken.slice(1))
-                    input = tokens.filter((t) => t !== modToken).join(' ') || undefined
+                const modTokenIdx = tokens.findIndex((t) => t.startsWith('+') && t.length > 1)
+                if (modTokenIdx >= 0) {
+                    let modString = tokens[modTokenIdx].slice(1) // remove '+'
+                    let customRate: number | null = null
+
+                    // Check if modString itself ends with a number ("+dt1.1" case)
+                    const rateMatch = modString.match(/^([a-zA-Z]+)([\d.]+)$/)
+                    if (rateMatch) {
+                        modString = rateMatch[1]
+                        customRate = parseFloat(rateMatch[2])
+                        if (isNaN(customRate)) customRate = null
+                    }
+
+                    // Check if next token is a standalone number ("+dt 1.1" case)
+                    if (customRate == null) {
+                        const nextToken = tokens[modTokenIdx + 1]
+                        if (nextToken && /^\d+\.?\d*$/.test(nextToken)) {
+                            customRate = parseFloat(nextToken)
+                            if (isNaN(customRate)) customRate = null
+                            else tokens.splice(modTokenIdx + 1, 1) // remove the rate token
+                        }
+                    }
+
+                    tokens.splice(modTokenIdx, 1) // remove the mod token
+                    mods = parseMods(modString, customRate)
+                    input = tokens.join(' ') || undefined
                 }
             }
 
@@ -134,6 +156,7 @@ export function apply(ctx: Context, config: AnalyserConfig, cache: BeatmapCache)
                 enablePatternAnalysis: true,
                 enableEtternaAnalysis: true,
                 speedRate: mods?.rate ?? 1.0,
+                cvtFlag: mods?.codes.includes('IN') ? 'IN' : mods?.codes.includes('HO') ? 'HO' : null,
                 withGraph: config.cardBody === 'graph' || config.cardBody === 'auto'
             }
 
@@ -143,7 +166,8 @@ export function apply(ctx: Context, config: AnalyserConfig, cache: BeatmapCache)
                     const { runMixedEstimatorFromText } =
                         await import('./core/estimator/mixedEstimator')
                     const mixedResult = runMixedEstimatorFromText(osuContent, {
-                        speedRate: mods?.rate ?? 1.0
+                        speedRate: mods?.rate ?? 1.0,
+                        cvtFlag: mods?.codes.includes('IN') ? 'IN' : mods?.codes.includes('HO') ? 'HO' : null,
                     })
                     // Still run full analysis for pattern/etterna/vibro, but override estimator
                     const result = await analyzeMap(osuContent, {

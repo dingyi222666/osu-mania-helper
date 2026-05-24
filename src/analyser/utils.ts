@@ -32,7 +32,9 @@ const KNOWN_MODS = [
     'NF',
     'SD',
     'PF',
-    'MR'
+    'MR',
+    'IN',
+    'HO'
 ] as const
 export type ModCode = (typeof KNOWN_MODS)[number]
 
@@ -45,8 +47,9 @@ export interface ParsedMods {
 /**
  * Parses a mod string like "DTHR" or "dt hr" into individual mod codes.
  * Case-insensitive, ignores spaces/commas.
+ * Accepts an optional customRate to override the default DT/HT rate.
  */
-export function parseMods(input: string): ParsedMods {
+export function parseMods(input: string, customRate?: number | null): ParsedMods {
     const normalized = input.toUpperCase().replace(/[\s,]+/g, '')
     const codes: ModCode[] = []
 
@@ -64,15 +67,33 @@ export function parseMods(input: string): ParsedMods {
         if (!matched) i++
     }
 
+    // IN/HO are conversion mods - they don't affect rate
+    const isCvtMod = codes.includes('IN') || codes.includes('HO')
+
+    // Clamp custom rate to reasonable bounds (ignored for conversion-only mods)
+    const clampedRate = (customRate != null && !isCvtMod)
+        ? Math.max(0.1, Math.min(3.0, customRate))
+        : null
+
     // Determine rate multiplier
     let rate = 1.0
     if (codes.includes('DT') || codes.includes('NC')) {
-        rate = 1.5
+        rate = clampedRate ?? 1.5
     } else if (codes.includes('HT') || codes.includes('DC')) {
-        rate = 0.75
+        rate = clampedRate ?? 0.75
+    } else if (clampedRate) {
+        rate = clampedRate
     }
 
-    const displayString = codes.length > 0 ? codes.join('') : 'NM'
+    // Build display string - show custom rate if provided
+    let displayString = codes.length > 0 ? codes.join('') : 'NM'
+    const isSpeedMod = codes.includes('DT') || codes.includes('NC') || codes.includes('HT') || codes.includes('DC')
+    if (clampedRate != null && isSpeedMod) {
+        const defaultRate = (codes.includes('DT') || codes.includes('NC')) ? 1.5 : 0.75
+        if (clampedRate !== defaultRate) {
+            displayString += `(${clampedRate}x)`
+        }
+    }
 
     return { codes, rate, displayString }
 }

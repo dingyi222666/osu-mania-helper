@@ -24,7 +24,7 @@ export async function formatResult(
             const cardData = buildCardData(result, mixed, config)
             // Inject mod info into card data if mods are active
             if (mods && mods.codes.length > 0) {
-                ;(cardData as any).modsDisplay = mods.displayString
+                ;(cardData as any).modsDisplay = mods.codes.join('')
                 ;(cardData as any).rateDisplay =
                     mods.rate !== 1.0 ? `${mods.rate.toFixed(2)}x` : null
             }

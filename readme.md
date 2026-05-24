@@ -38,7 +38,9 @@ ma <beatmap_id_or_url> [+mods]
 
 也可以直接发送 `.osu` 文件附件进行分析（无需提供 ID 或 URL）。
 
-支持的 Mods：DT, NC, HT, DC, HR, EZ, FL, HD, FI, NF, SD, PF, MR
+支持的 Mods：DT, NC, HT, DC, HR, EZ, FL, HD, FI, NF, SD, PF, MR, IN, HO
+
+支持自定义倍速：`+dt1.1`、`+ht0.8`（DT 范围 1.01-2.0，HT 范围 0.5-0.99）
 
 ## 配置
 
@@ -62,6 +64,18 @@ ma <beatmap_id_or_url> [+mods]
 - Etterna MinaCalc 来自 [Etterna](https://github.com/etternagame/etterna) 项目
 - Interlude SR 来自 [YAVSRG](https://github.com/YAVSRG/YAVSRG) 项目
 
+## 素材声明
+
+本项目使用了部分来自 [osu!](https://osu.ppy.sh) 官方的素材（字体、图标等），仅用于样式优化，纯开源免费分发。
+
+根据 [osu-web 项目的许可协议](https://github.com/ppy/osu-web/blob/84f545fd5dd769bc0e37131e7fd6a4dc81389147/README.md)，使用这些素材的项目必须：
+- 注明出处
+- 确保项目遵循相同的开源许可协议
+
+因此本项目采用 AGPL-3.0 许可协议。
+
 ## License
 
-MIT
+AGPL-3.0 — 详见 [LICENSE](./LICENSE)
+
+简而言之，如果您想使用该项目中的任何代码、设计或艺术元素，就必须注明出处，并确保您自己的项目也遵循相同的开源许可协议。

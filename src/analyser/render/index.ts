@@ -538,18 +538,71 @@ function buildModsHtml(modsDisplay?: string, rateDisplay?: string | null): strin
         mods.push(modsDisplay.slice(i, i + 2))
     }
 
-    const speedMods = ['DT', 'NC', 'HR']
-    const easyMods = ['HT', 'DC', 'EZ']
+    // osu! official mod type color mapping
+    // DifficultyIncrease: hsl(0, 100%, 70%) - red
+    // DifficultyReduction: hsl(90, 100%, 70%) - lime
+    // Conversion: hsl(255, 100%, 70%) - purple
+    // Automation: hsl(200, 100%, 70%) - blue
+    // Fun: hsl(333, 100%, 70%) - pink
+    // System: #ffcc22 - yellow
+    function modColor(mod: string): string {
+        switch (mod) {
+            case 'DT': case 'NC': case 'HR': case 'HD': case 'FL': case 'FI': case 'SD': case 'PF':
+                return 'hsl(0, 100%, 70%)'
+            case 'HT': case 'DC': case 'EZ': case 'NF':
+                return 'hsl(90, 100%, 70%)'
+            case 'IN': case 'HO': case 'MR':
+                return 'hsl(255, 100%, 70%)'
+            default:
+                return 'hsl(200, 100%, 70%)'
+        }
+    }
 
-    let html = mods.map(mod => {
-        const isSpeed = speedMods.includes(mod)
-        const isEasy = easyMods.includes(mod)
-        const cls = isSpeed ? 'pill--mod-speed' : isEasy ? 'pill--mod-easy' : 'pill--mod-speed'
-        return `<span class="pill pill--mod ${cls}">${mod}</span>`
-    }).join('')
+    // Darken color for extender background (osu! uses color-mix(in srgb, black, color 26.3%))
+    function modExtenderBg(mod: string): string {
+        switch (mod) {
+            case 'DT': case 'NC': case 'HR': case 'HD': case 'FL': case 'FI': case 'SD': case 'PF':
+                return 'hsl(0, 100%, 18%)'
+            case 'HT': case 'DC': case 'EZ': case 'NF':
+                return 'hsl(90, 100%, 18%)'
+            case 'IN': case 'HO': case 'MR':
+                return 'hsl(255, 100%, 18%)'
+            default:
+                return 'hsl(200, 100%, 18%)'
+        }
+    }
 
-    if (rateDisplay) {
-        html += `<span class="pill pill--mod pill--mod-speed">${escapeHtml(rateDisplay)}</span>`
+    // Foreground color for mod icon text (osu! uses color-mix(in srgb-linear, black, color 10%))
+    // This is very dark, almost black with a tint. Simplified to a dark version.
+    function modFgColor(mod: string): string {
+        switch (mod) {
+            case 'DT': case 'NC': case 'HR': case 'HD': case 'FL': case 'FI': case 'SD': case 'PF':
+                return 'hsl(0, 100%, 8%)'
+            case 'HT': case 'DC': case 'EZ': case 'NF':
+                return 'hsl(90, 100%, 8%)'
+            case 'IN': case 'HO': case 'MR':
+                return 'hsl(255, 100%, 8%)'
+            default:
+                return 'hsl(200, 100%, 8%)'
+        }
+    }
+
+    // Determine which mod gets the rate extender
+    const speedMods = new Set(['DT', 'NC', 'HT', 'DC'])
+
+    let html = ''
+    for (const mod of mods) {
+        const bg = modColor(mod)
+        const fg = modFgColor(mod)
+        const extBg = modExtenderBg(mod)
+        const hasRate = speedMods.has(mod) && rateDisplay
+
+        html += `<span class="mod-group" style="--mod-bg:${bg};--mod-fg:${fg};--mod-extender-bg:${extBg}">`
+        html += `<span class="mod-icon">${mod}</span>`
+        if (hasRate) {
+            html += `<span class="mod-extender">${escapeHtml(rateDisplay!)}</span>`
+        }
+        html += `</span>`
     }
 
     return html

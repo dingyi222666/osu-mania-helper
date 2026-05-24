@@ -189,8 +189,10 @@ body { padding: 0; }
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+    justify-content: flex-end;
     gap: 8px;
     flex-shrink: 0;
+    align-self: flex-end;
 }
 
 .main-panel__tags {
@@ -222,20 +224,55 @@ body { padding: 0; }
     padding: 2px 7px;
     letter-spacing: 0.5px;
 }
-.pill--mod {
+
+/* ─── Mod Icons (osu! style) ─── */
+.mod-group {
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+}
+.mod-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 20px;
+    border-radius: 5px;
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: var(--mod-fg);
+    background: var(--mod-bg);
+    z-index: 1;
+}
+.mod-extender {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
+    margin-left: -6px;
+    padding: 0 6px 0 10px;
+    border-radius: 0 5px 5px 0;
+    font-size: 9px;
     font-weight: 700;
-    border: none;
-    color: #fff;
-    font-size: 11px;
-    padding: 2px 8px;
+    color: var(--mod-bg);
+    background: var(--mod-extender-bg);
+    z-index: 0;
 }
-.pill--mod-speed {
-    background: hsl(360, 100%, 70%);
+.mod-extender::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-left: 6px solid var(--mod-bg);
 }
-.pill--mod-easy {
-    background: hsl(90, 100%, 70%);
-    color: #222;
-}
+
 .pill--sv {
     background: rgba(255, 56, 106, 0.9);
     border: 1px solid rgba(255, 198, 215, 0.85);
