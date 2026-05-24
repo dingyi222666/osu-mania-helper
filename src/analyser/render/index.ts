@@ -312,6 +312,7 @@ function buildRadarChartSvg(
     maxValue: number,
     fillColor: string,
     strokeColor: string,
+    valueFormat: 'percent' | 'decimal' = 'percent',
 ): string {
     const n = data.length
     if (n < 3) return ''
@@ -374,7 +375,9 @@ function buildRadarChartSvg(
         let dy = '0.35em'
         if (y < cy - 30) dy = '0.8em'
         else if (y > cy + 30) dy = '0em'
-        const valueStr = d.value > 0 ? `${d.value.toFixed(1)}%` : ''
+        const valueStr = d.value > 0
+            ? (valueFormat === 'decimal' ? d.value.toFixed(2) : `${d.value.toFixed(1)}%`)
+            : ''
         const valueLine = valueStr ? `<tspan x="${x.toFixed(1)}" dy="11" font-size="8" fill="rgba(255,255,255,0.55)">${valueStr}</tspan>` : ''
         return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="400" text-anchor="${anchor}" dy="${dy}"><tspan>${escapeHtml(d.label)}</tspan>${valueLine}</text>`
     }).join('\n    ')
@@ -408,10 +411,13 @@ function buildPatternRadarSvg(patterns: PatternCluster[], fillColor: string): st
         value: (p.amount / totalAmount) * 100, // percentage
     }))
 
-    // Max scale is 100% (the radar shows 0-100% range)
+    // Dynamic max scale: highest value × 1.2 (20% headroom), minimum 30
+    const highestValue = Math.max(...data.map(d => d.value))
+    const maxValue = Math.max(30, highestValue * 1.2)
+
     return `<div class="radar-chart">
         <span class="radar-chart__title">Patterns</span>
-        ${buildRadarChartSvg(data, 100, fillColor, fillColor)}
+        ${buildRadarChartSvg(data, maxValue, fillColor, fillColor, 'percent')}
     </div>`
 }
 
@@ -430,7 +436,7 @@ function buildEtternaRadarSvg(msd: EtternaMSD, fillColor: string): string {
 
     return `<div class="radar-chart">
         <span class="radar-chart__title">Etterna MSD</span>
-        ${buildRadarChartSvg(data, maxValue, fillColor, fillColor)}
+        ${buildRadarChartSvg(data, maxValue, fillColor, fillColor, 'decimal')}
     </div>`
 }
 
@@ -461,18 +467,14 @@ function buildDiffGraphSvg(graphData: GraphData, lineColor: string): string {
     if (timeSpan <= 0) return ''
 
     // Find min/max values for Y scaling
-    let minVal = Infinity
+    // Use 0 as the floor so break sections appear as flat at the bottom
+    let minVal = 0
     let maxVal = -Infinity
     for (const v of values) {
-        if (v < minVal) minVal = v
         if (v > maxVal) maxVal = v
     }
-    // Add a small margin so the line doesn't touch edges
-    const valRange = maxVal - minVal
-    if (valRange < 0.001) {
-        minVal -= 0.5
-        maxVal += 0.5
-    }
+    // Ensure we have a valid range
+    if (maxVal <= 0) maxVal = 1
     const valSpan = maxVal - minVal
 
     // Downsample if too many points (keep it under ~260 points for SVG size)
@@ -501,28 +503,32 @@ function buildDiffGraphSvg(graphData: GraphData, lineColor: string): string {
         points.push(`${x.toFixed(1)},${y.toFixed(1)}`)
     }
 
-    // Build fill path (area under curve)
-    const fillPoints = [
-        `${padX.toFixed(1)},${(padTop + plotH).toFixed(1)}`,
-        ...points,
-        `${(padX + plotW).toFixed(1)},${(padTop + plotH).toFixed(1)}`
-    ]
-
     // Build position-based gradient stops from sampled difficulty values
-    const numStops = Math.min(sampledTimes.length, 30) // cap gradient stops for SVG size
+    // The raw values are strain values (typically 0-30+), NOT star ratings (0-9).
+    // We normalize them to the 0-8 star range for color mapping, capping at 8
+    // to avoid the black zone (starColorFor returns black at 9+).
+    const normalizeForColor = (rawValue: number): number => {
+        // Map raw strain value to approximate star rating equivalent
+        // maxVal in the data represents the peak difficulty; map it to ~7-8 stars
+        // Values near 0 should map to ~1 star (still colorful, not grey)
+        const normalized = (rawValue / maxVal) * 7.5 + 0.5
+        return Math.min(Math.max(normalized, 0.1), 8)
+    }
+
+    // Use more gradient stops for smoother color transitions (at least 40)
+    const numStops = Math.min(sampledTimes.length, 50)
     const stopStep = Math.max(1, Math.floor(sampledTimes.length / numStops))
     const gradientStops: string[] = []
     for (let i = 0; i < sampledTimes.length; i += stopStep) {
         const offset = ((sampledTimes[i] - minTime) / timeSpan) * 100
-        const color = starColorFor(sampledValues[i])
+        const color = starColorFor(normalizeForColor(sampledValues[i]))
         gradientStops.push(`<stop offset="${offset.toFixed(1)}%" stop-color="${color}"/>`)
     }
     // Always include last point
-    const lastColor = starColorFor(sampledValues[sampledValues.length - 1])
+    const lastColor = starColorFor(normalizeForColor(sampledValues[sampledValues.length - 1]))
     gradientStops.push(`<stop offset="100%" stop-color="${lastColor}"/>`)
 
     const gradId = 'diffGrad'
-    const gradIdFill = 'diffGradFill'
 
     // Subtle grid lines (3 horizontal)
     const gridLines: string[] = []
@@ -536,13 +542,9 @@ function buildDiffGraphSvg(graphData: GraphData, lineColor: string): string {
         <linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="0%">
             ${gradientStops.join('\n            ')}
         </linearGradient>
-        <linearGradient id="${gradIdFill}" x1="0%" y1="0%" x2="100%" y2="0%">
-            ${gradientStops.join('\n            ')}
-        </linearGradient>
     </defs>
     ${gridLines.join('\n    ')}
-    <polygon points="${fillPoints.join(' ')}" fill="url(#${gradIdFill})" fill-opacity="0.15"/>
-    <polyline points="${points.join(' ')}" fill="none" stroke="url(#${gradId})" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <polyline points="${points.join(' ')}" fill="none" stroke="url(#${gradId})" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
 </svg>`
 }
 

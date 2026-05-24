@@ -38,27 +38,35 @@
                 display: block;
             }
             .title-bar__name {
+                display: flex;
+                align-items: baseline;
                 font-size: 18px;
                 font-weight: 400;
                 color: var(--text-primary);
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
                 line-height: 1.35;
                 margin-bottom: 6px;
             }
             .title-bar__song-title {
                 font-size: 18px;
                 font-weight: 400;
+                flex: 1;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
             .title-bar__song-artist {
                 font-size: 15px;
                 font-weight: 400;
+                flex-shrink: 0;
+                margin-left: 8px;
+                white-space: nowrap;
+                color: rgba(255, 255, 255, 0.7);
             }
             .title-bar__meta {
                 display: flex;
                 flex-wrap: nowrap;
-                align-items: flex-start;
+                align-items: center;
                 gap: 8px;
                 font-size: 14px;
                 color: var(--text-primary);
