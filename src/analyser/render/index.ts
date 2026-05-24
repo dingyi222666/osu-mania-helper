@@ -193,33 +193,85 @@ function modeTagValueStyle(tag: string): string {
     }
 }
 
-// ─── Bar color from fill percentage (star rating gradient) ──────────────────
+// ─── Per-bar gradient (multi-stop, only up to the fill point's color) ───────
 
 /**
- * Returns a color from the osu! star rating gradient based on fill ratio (0-1).
- * 0% fill = blue (#4290FB), 100% fill = black (#000000).
- * Uses the same gamma 2.2 interpolation as star colors.
+ * The full spectrum domain (position 0-1) and colors.
+ * We slice this spectrum up to the bar's fill ratio, then stretch
+ * the included stops to fill the bar width (0%-100%).
  */
-const FILL_DOMAIN = [0, 0.125, 0.2, 0.25, 0.33, 0.42, 0.49, 0.58, 0.67, 0.77, 1.0]
-const FILL_COLORS = [
+const SPECTRUM_DOMAIN = [0, 0.125, 0.2, 0.25, 0.33, 0.42, 0.49, 0.58, 0.67, 0.77]
+const SPECTRUM_COLORS = [
     '#4290FB', '#4FC0FF', '#4FFFD5', '#7CFF4F', '#F6F05C',
-    '#FF8068', '#FF4E6F', '#C645B8', '#6563DE', '#18158E', '#000000',
+    '#FF8068', '#FF4E6F', '#C645B8', '#6563DE', '#18158E',
 ]
 
-function barColorFromFill(fillRatio: number): string {
-    // Map fill ratio 1:1 to the full star rating color spectrum.
-    // MSD is already capped at 40, so values naturally stay in blue-to-pink range.
-    const scaled = Math.max(0, Math.min(fillRatio, 1))
-    if (scaled <= 0) return FILL_COLORS[0]
+/**
+ * Builds a multi-stop CSS gradient that only covers the spectrum
+ * from 0 up to `cutoff` (0-1). All included stops are remapped
+ * to 0%-100% within the bar, and the exact color at the cutoff
+ * is interpolated and placed at 100%.
+ *
+ * This means a bar at 30% fill shows blue→cyan→green (bright),
+ * while a bar at 75% shows blue→...→pink. Dark purple/black never appears
+ * because typical MSD values don't reach that high.
+ */
+function buildSpectrumGradient(cutoff: number): string {
+    const c = Math.max(0.01, Math.min(cutoff, 1))
 
-    for (let i = 0; i < FILL_DOMAIN.length - 1; i++) {
-        if (scaled >= FILL_DOMAIN[i] && scaled <= FILL_DOMAIN[i + 1]) {
-            const t = (scaled - FILL_DOMAIN[i]) / (FILL_DOMAIN[i + 1] - FILL_DOMAIN[i])
-            return interpolateGamma22(FILL_COLORS[i], FILL_COLORS[i + 1], t)
+    const stops: string[] = []
+
+    // Add all spectrum stops that fall within [0, cutoff)
+    for (let i = 0; i < SPECTRUM_DOMAIN.length; i++) {
+        if (SPECTRUM_DOMAIN[i] < c) {
+            const pct = (SPECTRUM_DOMAIN[i] / c) * 100
+            stops.push(`${SPECTRUM_COLORS[i]} ${pct.toFixed(1)}%`)
+        } else if (SPECTRUM_DOMAIN[i] === c) {
+            // Exact match at cutoff
+            stops.push(`${SPECTRUM_COLORS[i]} 100%`)
+            return `linear-gradient(to right, ${stops.join(', ')})`
+        } else {
+            break
         }
     }
 
-    return FILL_COLORS[FILL_COLORS.length - 1]
+    // Interpolate the exact color at the cutoff point
+    let endColor = SPECTRUM_COLORS[SPECTRUM_COLORS.length - 1]
+    for (let i = 0; i < SPECTRUM_DOMAIN.length - 1; i++) {
+        if (c >= SPECTRUM_DOMAIN[i] && c <= SPECTRUM_DOMAIN[i + 1]) {
+            const t = (c - SPECTRUM_DOMAIN[i]) / (SPECTRUM_DOMAIN[i + 1] - SPECTRUM_DOMAIN[i])
+            endColor = interpolateGamma22(SPECTRUM_COLORS[i], SPECTRUM_COLORS[i + 1], t)
+            break
+        }
+    }
+    stops.push(`${endColor} 100%`)
+
+    // Fallback: if only one stop, make a solid color
+    if (stops.length === 1) {
+        return `linear-gradient(to right, #4290FB, ${endColor})`
+    }
+
+    return `linear-gradient(to right, ${stops.join(', ')})`
+}
+
+/**
+ * Computes a per-bar inline gradient for Etterna MSD bars.
+ * Maps MSD value (0-40) to the spectrum cutoff (0-0.77 range).
+ */
+function barGradientFor(msdValue: number): string {
+    // MSD 0-40 maps to spectrum position 0-0.77 (full domain range)
+    const cutoff = Math.max(0.01, Math.min(msdValue / 40, 1)) * 0.77
+    return buildSpectrumGradient(cutoff)
+}
+
+/**
+ * Computes a per-bar inline gradient for pattern bars based on fill ratio.
+ * Fill ratio 0-1 maps to spectrum position 0-0.49 (stays in bright range).
+ */
+function barGradientForRatio(fillRatio: number): string {
+    // Pattern bars: map 0-1 fill to 0-0.49 of spectrum (blue to pink, stays bright)
+    const cutoff = Math.max(0.01, Math.min(fillRatio, 1)) * 0.49
+    return buildSpectrumGradient(cutoff)
 }
 
 // ─── HTML template ──────────────────────────────────────────────────────────
@@ -238,7 +290,7 @@ function buildPatternBarsHtml(patterns: PatternCluster[], starColor: string): st
     return topFive.map((cluster) => {
         const percent = (cluster.amount / totalAmount) * 100
         const fillRatio = Math.max(0, Math.min(cluster.amount / maxAmount, 1))
-        const color = barColorFromFill(fillRatio)
+        const gradient = barGradientForRatio(fillRatio)
         const subtype = cluster.subtypes || ''
         const subtypeHtml = subtype
             ? `<div class="bar-item__subtypes">${escapeHtml(subtype)}</div>`
@@ -250,7 +302,7 @@ function buildPatternBarsHtml(patterns: PatternCluster[], starColor: string): st
                     <span class="bar-item__value">${percent.toFixed(1)}%</span>
                 </div>
                 <div class="bar-item__track">
-                    <div class="bar-item__fill" style="width:${(fillRatio * 100).toFixed(1)}%;background:${color}"></div>
+                    <div class="bar-item__fill" style="width:${(fillRatio * 100).toFixed(1)}%;background:${gradient}"></div>
                 </div>
                 ${subtypeHtml}
             </div>
@@ -275,7 +327,7 @@ function buildEtternaBarsHtml(msd: EtternaMSD): string {
     return skills.map(([name, value]) => {
         const fillRatio = Math.min(1, Math.max(0, value / MSD_MAX))
         const width = fillRatio * 100
-        const color = barColorFromFill(fillRatio)
+        const gradient = barGradientFor(value)
         return `
             <div class="ett-item">
                 <div class="ett-item__header">
@@ -283,7 +335,7 @@ function buildEtternaBarsHtml(msd: EtternaMSD): string {
                     <span class="ett-item__value">${value.toFixed(2)}</span>
                 </div>
                 <div class="ett-item__track">
-                    <div class="ett-item__fill" style="width:${width.toFixed(1)}%;background:${color}"></div>
+                    <div class="ett-item__fill" style="width:${width.toFixed(1)}%;background:${gradient}"></div>
                 </div>
             </div>
         `
@@ -402,6 +454,11 @@ function buildHtml(data: CardRenderData): string {
         ? `https://assets.ppy.sh/beatmaps/${data.beatmapsetId}/covers/cover@2x.jpg`
         : ''
 
+    // Build cover <img> tag (uses <img> so document.images can detect it for load waiting)
+    const coverImgTag = coverUrl
+        ? `<img class="main-panel__cover" src="${coverUrl}" alt="" />`
+        : ''
+
     // Title bar name: "artist - title"
     const titleBarName = `${data.artist} - ${data.title}`
 
@@ -435,7 +492,7 @@ function buildHtml(data: CardRenderData): string {
         .replace(/\{\{starRating\}\}/g, data.starRating.toFixed(2))
         .replace('{{version}}', escapeHtml(data.version || '-'))
         .replace('{{creator}}', escapeHtml(data.creator || 'Unknown'))
-        .replace('{{coverUrl}}', coverUrl)
+        .replace('{{coverImgTag}}', coverImgTag)
         .replace('{{difficultyTextRc}}', escapeHtml(data.difficultyTextRc || data.difficultyText))
         .replace('{{difficultyLnHtml}}', data.difficultyTextLn
             ? `<div class="main-panel__rating">${escapeHtml(data.difficultyTextLn)}</div>`
@@ -467,6 +524,20 @@ export async function renderCard(ctx: Context, data: CardRenderData): Promise<h 
         await page.setViewport({ width: 740, height: 800 })
         await page.setContent(html, { waitUntil: 'domcontentloaded' })
         await page.evaluate(() => document.fonts.ready)
+        // Wait for images to load (with 5s timeout so it doesn't hang forever)
+        await page.evaluate(() => {
+            return Promise.race([
+                Promise.all(
+                    Array.from(document.images).map(img =>
+                        img.complete ? Promise.resolve() : new Promise(resolve => {
+                            img.onload = resolve
+                            img.onerror = resolve
+                        })
+                    )
+                ),
+                new Promise(resolve => setTimeout(resolve, 5000))
+            ])
+        })
 
         const card = await page.$('.card')
         if (!card) {
