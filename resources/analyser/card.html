@@ -157,11 +157,15 @@
                 min-width: 0;
             }
             .main-panel__rating {
-                font-size: 56px;
-                font-weight: 300;
-                line-height: 56px;
+                font-size: 38px;
+                font-weight: 600;
+                line-height: 42px;
                 color: var(--text-primary);
                 font-variant-numeric: tabular-nums lining-nums;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
             }
             .main-panel__estimator {
                 font-size: 12px;
@@ -189,10 +193,10 @@
                 display: flex;
                 flex-direction: column;
                 align-items: flex-end;
-                justify-content: flex-end;
+                justify-content: center;
                 gap: 8px;
                 flex-shrink: 0;
-                align-self: flex-end;
+                align-self: center;
             }
 
             .main-panel__tags {
@@ -252,7 +256,7 @@
             .mod-icon__fg {
                 position: absolute;
                 inset: 0;
-                margin: 0.2em;
+                margin: 0.12em;
                 background-color: var(--mod-fg);
                 mask-size: contain;
                 mask-position: center;
