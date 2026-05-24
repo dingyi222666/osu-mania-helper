@@ -238,7 +238,6 @@ function buildPatternBarsHtml(patterns: PatternCluster[], starColor: string): st
     return topFive.map((cluster) => {
         const percent = (cluster.amount / totalAmount) * 100
         const fillRatio = Math.max(0, Math.min(cluster.amount / maxAmount, 1))
-        const color = barColorFromFill(fillRatio)
         const subtype = cluster.subtypes || ''
         const subtypeHtml = subtype
             ? `<div class="bar-item__subtypes">${escapeHtml(subtype)}</div>`
@@ -250,7 +249,7 @@ function buildPatternBarsHtml(patterns: PatternCluster[], starColor: string): st
                     <span class="bar-item__value">${percent.toFixed(1)}%</span>
                 </div>
                 <div class="bar-item__track">
-                    <div class="bar-item__fill" style="width:${(fillRatio * 100).toFixed(1)}%;background:${color}"></div>
+                    <div class="bar-item__fill" style="width:${(fillRatio * 100).toFixed(1)}%"></div>
                 </div>
                 ${subtypeHtml}
             </div>
@@ -275,7 +274,6 @@ function buildEtternaBarsHtml(msd: EtternaMSD): string {
     return skills.map(([name, value]) => {
         const fillRatio = Math.min(1, Math.max(0, value / MSD_MAX))
         const width = fillRatio * 100
-        const color = barColorFromFill(fillRatio)
         return `
             <div class="ett-item">
                 <div class="ett-item__header">
@@ -283,7 +281,7 @@ function buildEtternaBarsHtml(msd: EtternaMSD): string {
                     <span class="ett-item__value">${value.toFixed(2)}</span>
                 </div>
                 <div class="ett-item__track">
-                    <div class="ett-item__fill" style="width:${width.toFixed(1)}%;background:${color}"></div>
+                    <div class="ett-item__fill" style="width:${width.toFixed(1)}%"></div>
                 </div>
             </div>
         `
@@ -402,6 +400,11 @@ function buildHtml(data: CardRenderData): string {
         ? `https://assets.ppy.sh/beatmaps/${data.beatmapsetId}/covers/cover@2x.jpg`
         : ''
 
+    // Build cover <img> tag (uses <img> so document.images can detect it for load waiting)
+    const coverImgTag = coverUrl
+        ? `<img class="main-panel__cover" src="${coverUrl}" alt="" />`
+        : ''
+
     // Title bar name: "artist - title"
     const titleBarName = `${data.artist} - ${data.title}`
 
@@ -435,7 +438,7 @@ function buildHtml(data: CardRenderData): string {
         .replace(/\{\{starRating\}\}/g, data.starRating.toFixed(2))
         .replace('{{version}}', escapeHtml(data.version || '-'))
         .replace('{{creator}}', escapeHtml(data.creator || 'Unknown'))
-        .replace('{{coverUrl}}', coverUrl)
+        .replace('{{coverImgTag}}', coverImgTag)
         .replace('{{difficultyTextRc}}', escapeHtml(data.difficultyTextRc || data.difficultyText))
         .replace('{{difficultyLnHtml}}', data.difficultyTextLn
             ? `<div class="main-panel__rating">${escapeHtml(data.difficultyTextLn)}</div>`

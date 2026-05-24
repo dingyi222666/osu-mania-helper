@@ -117,7 +117,7 @@ export function apply(ctx: Context, config: AnalyserConfig, cache: BeatmapCache)
                 return
             }
 
-            await sendTemporary(ctx, session, session.text('.analysing'))
+            const analysingMsgIds = await session.send(session.text('.analysing'))
 
             // Map config algorithm to AnalysisOptions
             const algorithmMap: Record<string, EstimatorAlgorithm> = {
@@ -149,6 +149,11 @@ export function apply(ctx: Context, config: AnalyserConfig, cache: BeatmapCache)
                         ...options_,
                         estimatorAlgorithm: 'Sunny' // base, will be overridden by mixed
                     })
+                    // Recall the analysing message immediately
+                    const analysingId = analysingMsgIds?.[0]
+                    if (analysingId) {
+                        session.bot.deleteMessage(session.channelId, analysingId).catch(() => {})
+                    }
                     return await formatResult(
                         ctx,
                         result,
@@ -168,11 +173,21 @@ export function apply(ctx: Context, config: AnalyserConfig, cache: BeatmapCache)
 
             try {
                 const result = await analyzeMap(osuContent, options_)
+                // Recall the analysing message immediately
+                const analysingId = analysingMsgIds?.[0]
+                if (analysingId) {
+                    session.bot.deleteMessage(session.channelId, analysingId).catch(() => {})
+                }
                 return await formatResult(ctx, result, null, config, mods)
             } catch (error) {
                 const message =
                     error instanceof Error ? error.message : String(error)
                 ctx.logger.warn(error)
+                // Recall the analysing message on error too
+                const analysingId = analysingMsgIds?.[0]
+                if (analysingId) {
+                    session.bot.deleteMessage(session.channelId, analysingId).catch(() => {})
+                }
                 await sendTemporary(ctx, session, session.text('.failed', [message]))
                 return
             }
