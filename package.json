@@ -1,7 +1,7 @@
 {
     "name": "koishi-plugin-osu-mania-helper",
-    "description": "根据 osu!mania 段位生成带希腊字母图片的 Koishi 插件。",
-    "version": "1.0.3",
+    "description": "一个提供 osu!mania 工具集的 Koishi 插件，包括谱面难度分析和希腊字母图片生成。",
+    "version": "1.1.0",
     "main": "lib/index.cjs",
     "module": "lib/index.mjs",
     "typings": "lib/index.d.ts",
@@ -71,7 +71,7 @@
     },
     "koishi": {
         "description": {
-            "zh": "根据 osu!mania 段位生成带希腊字母图片的插件。"
+            "zh": "提供 osu!mania 工具集，包括谱面难度分析和希腊字母图片生成。"
         }
     },
     "bugs": {
