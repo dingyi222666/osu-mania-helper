@@ -24,8 +24,8 @@ body { padding: 0; }
 
 /* ─── Card Shell ─── */
 .card {
-    width: 700px;
-    min-width: 700px; max-width: 700px;
+    width: 580px;
+    min-width: 580px; max-width: 580px;
     overflow: hidden;
     box-shadow: rgba(0, 0, 0, 0.25) 0px 1px 3px 0px;
     background: var(--body-bg);
@@ -290,111 +290,29 @@ body { padding: 0; }
     text-align: center;
 }
 
-/* ─── Bar Items (shared between pattern & etterna) ─── */
-.bars-section {
+/* ─── Radar Chart Section ─── */
+.radar-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.radar-chart {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-}
-.bar-item {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-.bar-item__header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
-}
-.bar-item__label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.bar-item__value {
-    font-size: 11px;
-    color: var(--text-secondary);
-    font-variant-numeric: tabular-nums;
-    font-weight: 600;
-}
-.bar-item__track {
-    width: 100%;
-    height: 6px;
-    border-radius: 10000px;
-    background: rgba(255, 255, 255, 0.06);
-    overflow: hidden;
-}
-.bar-item__fill {
-    height: 100%;
-    border-radius: inherit;
-    transition: width 0.3s ease;
-}
-.bar-item__subtypes {
-    font-size: 10px;
-    color: var(--text-secondary);
-    opacity: 0.7;
-    line-height: 1.4;
-}
-
-/* ─── Etterna Bars ─── */
-.ett-item {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-.ett-item__header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-}
-.ett-item__label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-.ett-item__value {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    font-variant-numeric: tabular-nums;
-}
-.ett-item__track {
-    width: 100%;
-    height: 6px;
-    border-radius: 10000px;
-    background: rgba(255, 255, 255, 0.06);
-    overflow: hidden;
-}
-.ett-item__fill {
-    height: 100%;
-    border-radius: inherit;
-}
-
-/* ─── Etterna Overall Badge ─── */
-.ett-overall {
-    display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 4px 12px;
-    border-radius: 10000px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-    font-variant-numeric: tabular-nums;
-    align-self: flex-start;
 }
-.ett-overall__label {
-    font-weight: 400;
-    color: var(--text-secondary);
+.radar-chart__title {
     font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.04em;
+}
+.radar-chart svg text {
+    font-family: var(--font-stack);
 }
 
 /* ─── Powered By Footer ─── */
@@ -452,21 +370,16 @@ body { padding: 0; }
                 <span class="stat-chip__value" style="{{modeTagValueStyle}}">{{modeTag}}</span>
             </div>
             <div class="stat-chip">
-                <span class="stat-chip__label">LN%</span>
+                <span class="stat-chip__label">LN</span>
                 <span class="stat-chip__value">{{lnPercent}}%</span>
             </div>
             {{bpmChipHtml}}
             {{ettOverallHtml}}
         </div>
 
-        <!-- Pattern Bars -->
-        <div class="bars-section" style="display:{{patternDisplay}}">
-            {{patternContent}}
-        </div>
-
-        <!-- Etterna Bars -->
-        <div class="bars-section" style="display:{{etternaDisplay}}">
-            {{etternaContent}}
+        <!-- Radar Charts -->
+        <div class="radar-section" style="display:{{radarDisplay}}">
+            {{radarContent}}
         </div>
     </div>
 

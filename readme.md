@@ -4,8 +4,6 @@
 
 一个提供 osu!mania 工具集的 Koishi 插件，包括谱面难度分析和希腊字母图片生成。
 
-> 本插件原名 `koishi-plugin-osu-mania-greek-alphabet`，已改名为 `koishi-plugin-osu-mania-helper`。原包已 deprecate，请迁移到新包。
-
 ## 命令
 
 ### `greek <symbol>`

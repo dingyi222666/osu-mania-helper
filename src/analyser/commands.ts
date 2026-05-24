@@ -133,7 +133,8 @@ export function apply(ctx: Context, config: AnalyserConfig, cache: BeatmapCache)
                 enableSvDetection: config.enableSV,
                 enablePatternAnalysis: true,
                 enableEtternaAnalysis: true,
-                speedRate: mods?.rate ?? 1.0
+                speedRate: mods?.rate ?? 1.0,
+                withGraph: config.cardBody === 'graph' || config.cardBody === 'auto'
             }
 
             // For 'mixed' algorithm, use the mixed estimator directly

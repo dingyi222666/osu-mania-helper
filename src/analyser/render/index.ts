@@ -28,6 +28,11 @@ export interface EtternaMSD {
     technical: number
 }
 
+export interface GraphData {
+    times: number[]
+    values: number[]
+}
+
 export interface CardRenderData {
     // Map metadata
     title: string
@@ -56,6 +61,9 @@ export interface CardRenderData {
     // Etterna MSD (optional)
     etternaMSD?: EtternaMSD
 
+    // Graph data (optional)
+    graphData?: GraphData
+
     // Vibro/SV flags
     isVibro?: boolean
     hasSV?: boolean
@@ -65,7 +73,7 @@ export interface CardRenderData {
     rateDisplay?: string | null
 
     // Display mode
-    bodyMode: 'pattern' | 'etterna' | 'none'
+    bodyMode: 'pattern' | 'etterna' | 'graph' | 'none'
 }
 
 // ─── Star color system (osu! gamma 2.2 interpolation) ───────────────────────
@@ -197,6 +205,19 @@ function modeTagValueStyle(tag: string): string {
     }
 }
 
+/**
+ * Expands mode tag abbreviations to full community names.
+ */
+function expandModeTag(tag: string): string {
+    switch (tag.toUpperCase()) {
+        case 'RC': return 'Rice'
+        case 'LN': return 'LN'
+        case 'HB': return 'Hybrid'
+        case 'MIX': return 'Mixed'
+        default: return tag
+    }
+}
+
 // ─── Per-bar gradient (multi-stop, only up to the fill point's color) ───────
 
 /**
@@ -271,82 +292,230 @@ function barGradientFor(msdValue: number): string {
     return buildSpectrumGradient(cutoff)
 }
 
-/**
- * Computes a per-bar inline gradient for pattern bars based on fill ratio.
- * Fill ratio 0-1 maps to spectrum position 0-0.49 (stays in bright range).
- */
-function barGradientForRatio(fillRatio: number): string {
-    // Pattern bars: map 0-1 fill to 0-0.49 of spectrum (blue to pink, stays bright)
-    const cutoff = Math.max(0.01, Math.min(fillRatio, 1)) * 0.49
-    return buildSpectrumGradient(cutoff)
-}
-
 // ─── HTML template ──────────────────────────────────────────────────────────
 
 import { getCardTemplate } from './templates/cardTemplate'
 
-// ─── Template rendering ─────────────────────────────────────────────────────
+// ─── Radar Chart SVG generation ─────────────────────────────────────────────
 
-function buildPatternBarsHtml(patterns: PatternCluster[], starColor: string): string {
-    if (!patterns || patterns.length === 0) return ''
+/**
+ * Generates a radar chart SVG string.
+ * @param data Array of {label, value} for each axis
+ * @param maxValue Maximum value for the scale (edge of chart)
+ * @param fillColor CSS color for the data polygon fill (will be made semi-transparent)
+ * @param strokeColor CSS color for the data polygon stroke
+ */
+function buildRadarChartSvg(
+    data: { label: string; value: number }[],
+    maxValue: number,
+    fillColor: string,
+    strokeColor: string,
+): string {
+    const n = data.length
+    if (n < 3) return ''
 
-    const topFive = patterns.slice(0, 5)
-    const totalAmount = topFive.reduce((sum, p) => sum + p.amount, 0) || 1
-    const maxAmount = Math.max(...topFive.map(p => p.amount), 1)
+    const cx = 120
+    const cy = 120
+    const radius = 85
+    const labelRadius = radius + 18
+    const size = 240
 
-    return topFive.map((cluster) => {
-        const percent = (cluster.amount / totalAmount) * 100
-        const fillRatio = Math.max(0, Math.min(cluster.amount / maxAmount, 1))
-        const gradient = barGradientForRatio(fillRatio)
-        const subtype = cluster.subtypes || ''
-        const subtypeHtml = subtype
-            ? `<div class="bar-item__subtypes">${escapeHtml(subtype)}</div>`
-            : ''
-        return `
-            <div class="bar-item">
-                <div class="bar-item__header">
-                    <span class="bar-item__label">${escapeHtml(cluster.name)}</span>
-                    <span class="bar-item__value">${percent.toFixed(1)}%</span>
-                </div>
-                <div class="bar-item__track">
-                    <div class="bar-item__fill" style="width:${(fillRatio * 100).toFixed(1)}%;background:${gradient}"></div>
-                </div>
-                ${subtypeHtml}
-            </div>
-        `
-    }).join('')
+    // Angle for each axis (start from top, go clockwise)
+    const angleStep = (2 * Math.PI) / n
+    const startAngle = -Math.PI / 2
+
+    function polarToXY(angle: number, r: number): [number, number] {
+        return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)]
+    }
+
+    // Build grid polygons (3 levels: 33%, 66%, 100%)
+    const gridLevels = [0.33, 0.66, 1.0]
+    const gridPolygons = gridLevels.map(level => {
+        const points = Array.from({ length: n }, (_, i) => {
+            const angle = startAngle + i * angleStep
+            const [x, y] = polarToXY(angle, radius * level)
+            return `${x.toFixed(1)},${y.toFixed(1)}`
+        }).join(' ')
+        return `<polygon points="${points}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>`
+    }).join('\n    ')
+
+    // Build axis lines
+    const axisLines = Array.from({ length: n }, (_, i) => {
+        const angle = startAngle + i * angleStep
+        const [x, y] = polarToXY(angle, radius)
+        return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>`
+    }).join('\n    ')
+
+    // Build data polygon
+    const dataPoints = data.map((d, i) => {
+        const angle = startAngle + i * angleStep
+        const ratio = Math.min(d.value / maxValue, 1)
+        const [x, y] = polarToXY(angle, radius * ratio)
+        return `${x.toFixed(1)},${y.toFixed(1)}`
+    }).join(' ')
+
+    // Convert hex fill color to rgba
+    const fillRgb = hexToRgb(fillColor)
+    const fillRgba = `rgba(${fillRgb[0]},${fillRgb[1]},${fillRgb[2]},0.25)`
+    const strokeRgba = `rgba(${fillRgb[0]},${fillRgb[1]},${fillRgb[2]},0.85)`
+
+    // Build labels
+    const labels = data.map((d, i) => {
+        const angle = startAngle + i * angleStep
+        const [x, y] = polarToXY(angle, labelRadius)
+        // Text anchor based on position
+        let anchor = 'middle'
+        if (x < cx - 5) anchor = 'end'
+        else if (x > cx + 5) anchor = 'start'
+        // Vertical adjustment
+        let dy = '0.35em'
+        if (y < cy - 30) dy = '0.8em'
+        else if (y > cy + 30) dy = '0em'
+        return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="400" text-anchor="${anchor}" dy="${dy}">${escapeHtml(d.label)}</text>`
+    }).join('\n    ')
+
+    return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+    ${gridPolygons}
+    ${axisLines}
+    <polygon points="${dataPoints}" fill="${fillRgba}" stroke="${strokeRgba}" stroke-width="1.5"/>
+    ${labels}
+</svg>`
 }
 
-function buildEtternaBarsHtml(msd: EtternaMSD): string {
-    const skills: [string, number][] = [
-        ['Stream', msd.stream],
-        ['Jumpstream', msd.jumpstream],
-        ['Handstream', msd.handstream],
-        ['Stamina', msd.stamina],
-        ['JackSpeed', msd.jackSpeed],
-        ['Chordjack', msd.chordjack],
-        ['Technical', msd.technical],
+// ─── Template rendering ─────────────────────────────────────────────────────
+
+function buildPatternRadarSvg(patterns: PatternCluster[], fillColor: string): string {
+    if (!patterns || patterns.length === 0) return ''
+
+    const topItems = patterns.slice(0, 7) // Radar works best with 3-7 axes
+    if (topItems.length < 3) {
+        // Pad to minimum 3 for a valid polygon
+        while (topItems.length < 3) {
+            topItems.push({ name: '-', amount: 0 })
+        }
+    }
+
+    const maxAmount = Math.max(...topItems.map(p => p.amount), 1)
+
+    const data = topItems.map(p => ({
+        label: p.name,
+        value: p.amount,
+    }))
+
+    return `<div class="radar-chart">
+        <span class="radar-chart__title">Patterns</span>
+        ${buildRadarChartSvg(data, maxAmount, fillColor, fillColor)}
+    </div>`
+}
+
+function buildEtternaRadarSvg(msd: EtternaMSD, fillColor: string): string {
+    const data = [
+        { label: 'Stream', value: msd.stream },
+        { label: 'JS', value: msd.jumpstream },
+        { label: 'HS', value: msd.handstream },
+        { label: 'Stamina', value: msd.stamina },
+        { label: 'Jack', value: msd.jackSpeed },
+        { label: 'CJ', value: msd.chordjack },
+        { label: 'Tech', value: msd.technical },
     ]
 
-    // Absolute scale: MSD 40 = 100% fill (cap at 40)
-    const MSD_MAX = 40
+    // Max scale = 30 (same as color scale)
+    return `<div class="radar-chart">
+        <span class="radar-chart__title">Etterna MSD</span>
+        ${buildRadarChartSvg(data, 30, fillColor, fillColor)}
+    </div>`
+}
 
-    return skills.map(([name, value]) => {
-        const fillRatio = Math.min(1, Math.max(0, value / MSD_MAX))
-        const width = fillRatio * 100
-        const gradient = barGradientFor(value)
-        return `
-            <div class="ett-item">
-                <div class="ett-item__header">
-                    <span class="ett-item__label">${name}</span>
-                    <span class="ett-item__value">${value.toFixed(2)}</span>
-                </div>
-                <div class="ett-item__track">
-                    <div class="ett-item__fill" style="width:${width.toFixed(1)}%;background:${gradient}"></div>
-                </div>
-            </div>
-        `
-    }).join('')
+// ─── Difficulty Graph SVG generation ────────────────────────────────────────
+
+/**
+ * Builds a difficulty-over-time SVG graph.
+ * @param graphData The time/value series from the estimator
+ * @param lineColor CSS color for the graph line
+ */
+function buildDiffGraphSvg(graphData: GraphData, lineColor: string): string {
+    const { times, values } = graphData
+    if (!times || !values || times.length < 2) return ''
+
+    const width = 520
+    const height = 120
+    const padX = 0
+    const padTop = 8
+    const padBottom = 4
+
+    const plotW = width - padX * 2
+    const plotH = height - padTop - padBottom
+
+    const minTime = times[0]
+    const maxTime = times[times.length - 1]
+    const timeSpan = maxTime - minTime
+    if (timeSpan <= 0) return ''
+
+    // Find min/max values for Y scaling
+    let minVal = Infinity
+    let maxVal = -Infinity
+    for (const v of values) {
+        if (v < minVal) minVal = v
+        if (v > maxVal) maxVal = v
+    }
+    // Add a small margin so the line doesn't touch edges
+    const valRange = maxVal - minVal
+    if (valRange < 0.001) {
+        minVal -= 0.5
+        maxVal += 0.5
+    }
+    const valSpan = maxVal - minVal
+
+    // Downsample if too many points (keep it under ~260 points for SVG size)
+    const maxPoints = 260
+    let sampledTimes = times
+    let sampledValues = values
+    if (times.length > maxPoints) {
+        const step = times.length / maxPoints
+        sampledTimes = []
+        sampledValues = []
+        for (let i = 0; i < maxPoints; i++) {
+            const idx = Math.min(Math.floor(i * step), times.length - 1)
+            sampledTimes.push(times[idx])
+            sampledValues.push(values[idx])
+        }
+        // Always include last point
+        sampledTimes.push(times[times.length - 1])
+        sampledValues.push(values[values.length - 1])
+    }
+
+    // Build polyline points
+    const points: string[] = []
+    for (let i = 0; i < sampledTimes.length; i++) {
+        const x = padX + ((sampledTimes[i] - minTime) / timeSpan) * plotW
+        const y = padTop + plotH - ((sampledValues[i] - minVal) / valSpan) * plotH
+        points.push(`${x.toFixed(1)},${y.toFixed(1)}`)
+    }
+
+    // Build fill path (area under curve)
+    const fillPoints = [
+        `${padX.toFixed(1)},${(padTop + plotH).toFixed(1)}`,
+        ...points,
+        `${(padX + plotW).toFixed(1)},${(padTop + plotH).toFixed(1)}`
+    ]
+
+    // Parse line color for fill
+    const rgb = hexToRgb(lineColor)
+    const fillColor = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.15)`
+    const strokeColor = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.9)`
+
+    // Subtle grid lines (3 horizontal)
+    const gridLines: string[] = []
+    for (let i = 1; i <= 3; i++) {
+        const gy = padTop + (plotH * i) / 4
+        gridLines.push(`<line x1="${padX}" y1="${gy.toFixed(1)}" x2="${padX + plotW}" y2="${gy.toFixed(1)}" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>`)
+    }
+
+    return `<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+    ${gridLines.join('\n    ')}
+    <polygon points="${fillPoints.join(' ')}" fill="${fillColor}"/>
+    <polyline points="${points.join(' ')}" fill="none" stroke="${strokeColor}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>`
 }
 
 function escapeHtml(str: string): string {
@@ -479,20 +648,31 @@ function buildHtml(data: CardRenderData): string {
         mapperHtml = `mapped by <span class="title-bar__mapper-name">${escapeHtml(name)}</span>`
     }
 
-    // Build body content
-    let patternHtml = ''
-    let etternaHtml = ''
+    // Build body content - radar charts or graph
+    let radarHtml = ''
 
-    if (data.bodyMode === 'pattern' && data.patterns && data.patterns.length > 0) {
-        patternHtml = buildPatternBarsHtml(data.patterns, starColor)
+    // Compute MSD-based fill color for radar charts
+    const msdForColor = data.etternaMSD ? data.etternaMSD.overall : 0
+    const radarFillColor = starColorFor(msdForColor * 9 / 30)
+
+    if (data.bodyMode === 'graph' && data.graphData) {
+        radarHtml = buildDiffGraphSvg(data.graphData, starColor)
     } else if (data.bodyMode === 'etterna' && data.etternaMSD) {
-        etternaHtml = buildEtternaBarsHtml(data.etternaMSD)
+        radarHtml = buildEtternaRadarSvg(data.etternaMSD, radarFillColor)
+    } else if (data.bodyMode === 'pattern' && data.patterns && data.patterns.length > 0) {
+        radarHtml = buildPatternRadarSvg(data.patterns, radarFillColor)
     }
 
-    // Etterna overall badge
+    // Etterna overall badge with MSD-colored value
     const ettOverallHtml = data.etternaMSD && data.bodyMode === 'etterna'
-        ? `<div class="stat-chip"><span class="stat-chip__label">MSD</span><span class="stat-chip__value">${data.etternaMSD.overall.toFixed(2)}</span></div>`
+        ? (() => {
+            const msdColor = starColorFor(data.etternaMSD.overall * 9 / 30)
+            return `<div class="stat-chip"><span class="stat-chip__label">MSD</span><span class="stat-chip__value" style="color:${msdColor}">${data.etternaMSD.overall.toFixed(2)}</span></div>`
+        })()
         : ''
+
+    // Mode tag: expand abbreviations to full names
+    const modeTagDisplay = expandModeTag(data.modeTag)
 
     // Mods
     const modsHtml = buildModsHtml(data.modsDisplay, data.rateDisplay)
@@ -515,17 +695,15 @@ function buildHtml(data: CardRenderData): string {
         .replace('{{difficultyLnHtml}}', data.difficultyTextLn
             ? `<div class="main-panel__rating">${escapeHtml(data.difficultyTextLn)}</div>`
             : '')
-        .replace('{{modeTag}}', escapeHtml(data.modeTag))
+        .replace('{{modeTag}}', escapeHtml(modeTagDisplay))
         .replace('{{modeTagValueStyle}}', modeTagValueStyle(data.modeTag))
         .replace('{{modsHtml}}', modsHtml)
         .replace('{{flagsHtml}}', flagsHtml)
         .replace('{{lnPercent}}', (data.lnPercent * 100).toFixed(1))
         .replace('{{bpmChipHtml}}', '')  // BPM not currently available in analysis
         .replace('{{ettOverallHtml}}', ettOverallHtml)
-        .replace('{{patternContent}}', patternHtml)
-        .replace('{{etternaContent}}', etternaHtml)
-        .replace('{{patternDisplay}}', data.bodyMode === 'pattern' ? 'flex' : 'none')
-        .replace('{{etternaDisplay}}', data.bodyMode === 'etterna' ? 'flex' : 'none')
+        .replace('{{radarContent}}', radarHtml)
+        .replace('{{radarDisplay}}', (data.bodyMode === 'pattern' || data.bodyMode === 'etterna' || data.bodyMode === 'graph') ? 'flex' : 'none')
 }
 
 // ─── Puppeteer rendering ────────────────────────────────────────────────────
@@ -538,7 +716,7 @@ export async function renderCard(ctx: Context, data: CardRenderData): Promise<h 
     let page: Awaited<ReturnType<typeof ctx.puppeteer.page>> | undefined
     try {
         page = await ctx.puppeteer.page()
-        await page.setViewport({ width: 740, height: 800, deviceScaleFactor: 2 })
+        await page.setViewport({ width: 620, height: 800, deviceScaleFactor: 2 })
         await page.setContent(html, { waitUntil: 'domcontentloaded' })
         await page.evaluate(() => document.fonts.ready)
         // Wait for images to load (with 5s timeout so it doesn't hang forever)
@@ -618,9 +796,15 @@ export function buildCardData(
 
     // Determine body mode
     // In 'auto' mode, prefer etterna MSD (more meaningful difficulty info) over raw pattern counts
-    let bodyMode: 'pattern' | 'etterna' | 'none' = 'none'
-    if (config.cardBody === 'auto') {
-        if (result.etternaResult?.values) {
+    let bodyMode: 'pattern' | 'etterna' | 'graph' | 'none' = 'none'
+    if (config.cardBody === 'graph') {
+        bodyMode = 'graph'
+    } else if (config.cardBody === 'auto') {
+        // In auto mode, show graph if available, otherwise fall back to etterna/pattern
+        const graph = result.estimator?.graph as GraphData | null | undefined
+        if (graph && graph.times?.length >= 2) {
+            bodyMode = 'graph'
+        } else if (result.etternaResult?.values) {
             bodyMode = 'etterna'
         } else if (result.patternReport?.Clusters && result.patternReport.Clusters.length > 0) {
             bodyMode = 'pattern'
@@ -629,6 +813,15 @@ export function buildCardData(
         bodyMode = 'pattern'
     } else if (config.cardBody === 'etterna') {
         bodyMode = 'etterna'
+    }
+
+    // Extract graph data from estimator result
+    let graphData: GraphData | undefined
+    if (bodyMode === 'graph') {
+        const graph = result.estimator?.graph as GraphData | null | undefined
+        if (graph && graph.times?.length >= 2) {
+            graphData = { times: graph.times, values: graph.values }
+        }
     }
 
     // Build pattern clusters
@@ -678,6 +871,7 @@ export function buildCardData(
         difficultyTextLn,
         patterns,
         etternaMSD,
+        graphData,
         isVibro: result.isVibro,
         hasSV: result.isSv,
         bodyMode,
