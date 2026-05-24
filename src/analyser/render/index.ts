@@ -359,7 +359,7 @@ function buildRadarChartSvg(
     const fillRgba = `rgba(${fillRgb[0]},${fillRgb[1]},${fillRgb[2]},0.25)`
     const strokeRgba = `rgba(${fillRgb[0]},${fillRgb[1]},${fillRgb[2]},0.85)`
 
-    // Build labels
+    // Build labels with values
     const labels = data.map((d, i) => {
         const angle = startAngle + i * angleStep
         const [x, y] = polarToXY(angle, labelRadius)
@@ -371,7 +371,9 @@ function buildRadarChartSvg(
         let dy = '0.35em'
         if (y < cy - 30) dy = '0.8em'
         else if (y > cy + 30) dy = '0em'
-        return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="400" text-anchor="${anchor}" dy="${dy}">${escapeHtml(d.label)}</text>`
+        const valueStr = d.value > 0 ? d.value.toFixed(2) : ''
+        const valueLine = valueStr ? `<tspan x="${x.toFixed(1)}" dy="11" font-size="8" fill="rgba(255,255,255,0.55)">${valueStr}</tspan>` : ''
+        return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="400" text-anchor="${anchor}" dy="${dy}"><tspan>${escapeHtml(d.label)}</tspan>${valueLine}</text>`
     }).join('\n    ')
 
     return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
@@ -651,9 +653,9 @@ function buildHtml(data: CardRenderData): string {
     // Build body content - radar charts or graph
     let radarHtml = ''
 
-    // Compute MSD-based fill color for radar charts
+    // Compute MSD-based fill color for radar charts (capped to avoid too-dark colors)
     const msdForColor = data.etternaMSD ? data.etternaMSD.overall : 0
-    const radarFillColor = starColorFor(msdForColor * 9 / 30)
+    const radarFillColor = starColorFor(Math.min(msdForColor * 9 / 30, 6.5))
 
     if (data.bodyMode === 'graph' && data.graphData) {
         radarHtml = buildDiffGraphSvg(data.graphData, starColor)
@@ -663,12 +665,9 @@ function buildHtml(data: CardRenderData): string {
         radarHtml = buildPatternRadarSvg(data.patterns, radarFillColor)
     }
 
-    // Etterna overall badge with MSD-colored value
-    const ettOverallHtml = data.etternaMSD && data.bodyMode === 'etterna'
-        ? (() => {
-            const msdColor = starColorFor(data.etternaMSD.overall * 9 / 30)
-            return `<div class="stat-chip"><span class="stat-chip__label">MSD</span><span class="stat-chip__value" style="color:${msdColor}">${data.etternaMSD.overall.toFixed(2)}</span></div>`
-        })()
+    // Etterna overall badge - always show when MSD data is available
+    const ettOverallHtml = data.etternaMSD
+        ? `<div class="stat-chip"><span class="stat-chip__label">MSD</span><span class="stat-chip__value" style="color:#ffffff">${data.etternaMSD.overall.toFixed(2)}</span></div>`
         : ''
 
     // Mode tag: expand abbreviations to full names
