@@ -227,7 +227,7 @@ function getResourceDir() {
         typeof __dirname === 'string'
             ? __dirname
             : path.dirname(fileURLToPath(import.meta.url))
-    return path.resolve(runtimeDir, '../resources')
+    return path.resolve(runtimeDir, '../resources/greek')
 }
 
 function getSymbolPath(symbol: GreekSymbol) {

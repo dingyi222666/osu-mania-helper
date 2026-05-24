@@ -1,13 +1,23 @@
 import { Context, Schema } from 'koishi'
-import { apply as commands } from './commands'
+import { apply as greek } from './greek'
+import { apply as analyser, Config as AnalyserConfig } from './analyser'
+import type { AnalyserConfig as AnalyserConfigType } from './analyser/config'
 
-export const name = 'osu-mania-greek-alphabet'
+export const name = 'osu-mania-helper'
 
-export const Config: Schema<object> = Schema.object({})
+export const inject = {
+    optional: ['puppeteer'],
+}
 
-export function apply(ctx: Context) {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    ctx.i18n.define('zh-CN', require('./locales/zh-CN'))
+export interface Config {
+    analyser: AnalyserConfigType
+}
 
-    ctx.plugin(commands)
+export const Config: Schema<Config> = Schema.object({
+    analyser: AnalyserConfig.description('谱面分析器配置'),
+})
+
+export function apply(ctx: Context, config: Config) {
+    ctx.plugin(greek)
+    ctx.plugin(analyser, config.analyser)
 }

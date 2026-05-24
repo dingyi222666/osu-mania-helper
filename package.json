@@ -1,5 +1,5 @@
 {
-    "name": "koishi-plugin-osu-mania-greek-alphabet",
+    "name": "koishi-plugin-osu-mania-helper",
     "description": "根据 osu!mania 段位生成带希腊字母图片的 Koishi 插件。",
     "version": "1.0.3",
     "main": "lib/index.cjs",
@@ -29,7 +29,13 @@
         "mania"
     ],
     "peerDependencies": {
-        "koishi": "^4.18.9"
+        "koishi": "^4.18.9",
+        "koishi-plugin-puppeteer": "^3.0.0"
+    },
+    "peerDependenciesMeta": {
+        "koishi-plugin-puppeteer": {
+            "optional": true
+        }
     },
     "dependencies": {
         "@jimp/core": "^1.6.0",
@@ -69,9 +75,9 @@
         }
     },
     "bugs": {
-        "url": "https://github.com/dingyi222666/koishi-plugin-osu-mania-greek-alphabet/issues"
+        "url": "https://github.com/dingyi222666/koishi-plugin-osu-mania-helper/issues"
     },
-    "homepage": "https://github.com/dingyi222666/koishi-plugin-osu-mania-greek-alphabet#readme",
-    "repository": "git@github.com:dingyi222666/osu-mania-greek-alphabet.git",
+    "homepage": "https://github.com/dingyi222666/koishi-plugin-osu-mania-helper#readme",
+    "repository": "git@github.com:dingyi222666/osu-mania-helper.git",
     "author": "dingyi222666 <dingyi222666@foxmail.com>"
 }

@@ -1,0 +1,18 @@
+commands:
+    mania-analyse:
+        description: 分析 osu!mania 谱面难度
+        usage: |-
+            用法：ma <谱面ID或URL> [+mods]
+            示例：
+              ma 4812662
+              ma 4812662 +dt
+              ma 4812662 +nc
+              ma https://osu.ppy.sh/beatmaps/4812662 +dthr
+            支持的 Mods：DT, NC, HT, DC, HR, EZ, FL, HD, FI, NF, SD, PF, MR
+        messages:
+            prompt-file: 请发送 .osu 文件、谱面链接或谱面 ID。
+            timeout: 等待文件超时，已取消。
+            no-file: 没有找到 .osu 文件。
+            analysing: 正在分析谱面...
+            failed: 分析失败：{0}
+            download-failed: 谱面下载失败：{0}
